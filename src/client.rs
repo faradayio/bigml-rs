@@ -1,18 +1,18 @@
 //! A client connection to BigML.
 
 use mime;
-use multipart::client::lazy::Multipart;
 use reqwest;
 use std::fs;
 use std::io::{self, Read};
 use std::path::Path;
 use url::Url;
+use uuid::Uuid;
 
 use errors::*;
 
 lazy_static! {
     /// The URL of the BigML API.
-    static ref BIGML_URL: Url = Url::parse("https://bigml.io/")
+    static ref BIGML_URL: Url = Url::parse("https://bigml.io/") // "http://localhost:8000"
         .expect("Cannot parse BigML URL in source code");
 }
 
@@ -49,39 +49,39 @@ impl Client {
     /// Create a BigML data source using data from the specified path.  We
     /// stream the data over the network without trying to load it all into
     /// memory.
-    pub fn source_create_from_path<P>(&self, path: P)
-                                      -> Result<String>
+    pub fn source_create_from_path<P>(&self, path: P) -> Result<String>
         where P: AsRef<Path>
     {
+        // Open up our file.
         let path = path.as_ref();
+        let filename = path.to_string_lossy();
         let file = fs::File::open(&path)
             .chain_err(|| ErrorKind::CouldNotReadFile(path.to_owned()))?;
-        self.source_create_from_reader(&path.to_string_lossy(), file)
-    }
 
-    /// Create a BigML data source using data from a reader.  We stream the
-    /// data over the network without trying to load it all into memory.
-    pub fn source_create_from_reader<R>(&self, filename: &str, reader: R)
-                                        -> Result<String>
-        where R: Read + 'static
-    {
         // Create a streaming, multi-part encoder.  Don't even think of
         // reading all the data into memory; there may be 10s of gigabytes
         // for some applications.
-        let mut multipart: Multipart<'static, 'static> = Multipart::new();
-        multipart.add_stream("file", reader, Some(filename.to_owned()), None);
-        //multipart.add_file("file", Path::new("iris.csv"));
-        let mut encoded_reader = multipart.prepare()
-            .chain_err(|| {
-                ErrorKind::CouldNotReadFile(Path::new(filename).to_owned())
-            })?;
+        //
+        // TODO: Escape filename.
+        let boundary = format!("--------------------------{}", Uuid::new_v4());
+        let header = format!("--{}\r
+Content-Disposition: form-data; name=\"file\"; filename=\"{}\"\r
+Content-Type: application/octet-stream\r
+\r
+", &boundary, filename);
+        let footer = format!("\r
+--{}--\r
+", &boundary);
+        let mut body = io::Cursor::new(header)
+            .chain(file)
+            .chain(io::Cursor::new(footer));
 
-        //println!("BEGIN OUTPUT");
-        //io::copy(&mut encoded_reader, &mut io::stdout()).unwrap();
-        //println!("END OUTPUT");
+        // Read back our data.
+        let mut body_data = vec![];
+        body.read_to_end(&mut body_data)
+            .chain_err(|| ErrorKind::CouldNotReadFile(path.to_owned()))?;
 
         // Generate an appropriate Content-Type header.
-        let boundary = encoded_reader.boundary().into();
         let mime = mime::Mime(mime::TopLevel::Multipart,
                               mime::SubLevel::FormData,
                               vec![(mime::Attr::Boundary,
@@ -96,7 +96,7 @@ impl Client {
             .chain_err(&mkerr)?;
         let mut res = client.post(url.clone())
             .header(reqwest::header::ContentType(mime))
-            .body(reqwest::Body::new(encoded_reader))
+            .body(body_data)
             .send()
             .map_err(|e| { let kind: Error = format!("{}", e).into(); kind })
             .chain_err(&mkerr)?;
@@ -106,6 +106,9 @@ impl Client {
             res.read_to_string(&mut body).chain_err(&mkerr)?;
             Ok(body)
         } else {
+            let mut body = String::new();
+            res.read_to_string(&mut body).chain_err(&mkerr)?;
+            println!("Error body: {}", body);
             let err: Error = ErrorKind::UnexpectedHttpStatus(res.status().to_owned())
                 .into();
             Err(err).chain_err(&mkerr)

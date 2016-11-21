@@ -9,9 +9,9 @@ extern crate error_chain;
 #[macro_use]
 extern crate lazy_static;
 extern crate mime;
-extern crate multipart;
 extern crate reqwest;
 extern crate url;
+extern crate uuid;
 
 pub use client::Client;
 pub use errors::*;
