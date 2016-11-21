@@ -25,6 +25,6 @@ fn main() {
     let client = bigml::Client::new(bigml_username, bigml_api_key)
         .expect("can't create bigml::Client");
     let response = client.source_create_from_path(&path)
-        .expect("can't create bigml::Client");
-    println!("{}", &response);
+        .expect("can't create source");
+    println!("{:#?}", &response);
 }

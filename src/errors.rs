@@ -5,10 +5,17 @@
 #![allow(missing_docs)]
 
 use reqwest;
+use serde_json;
+use std::io;
 use std::path::PathBuf;
 use url::Url;
 
 error_chain! {
+    foreign_links {
+        io::Error, Io;
+        serde_json::Error, Json;
+    }
+
     errors {
         /// We could not access the specified URL.
         CouldNotAccessUrl(url: Url) {

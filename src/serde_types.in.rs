@@ -1,5 +1,8 @@
 // Included directly into client.rs after pre-processing by serde.
 
+use serde::{self, Deserialize, Deserializer};
+use std::result;
+
 /// A BigML status code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceStatusCode {

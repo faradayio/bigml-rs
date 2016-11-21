@@ -1,18 +1,20 @@
 //! A client connection to BigML.
 
-use mime;
 use reqwest;
-use std::fs;
-use std::io::{self, Read};
+use serde::Deserialize;
+use serde_json;
+use std::io::Read;
 use std::path::Path;
 use url::Url;
-use uuid::Uuid;
 
 use errors::*;
+use multipart_form_data;
+use serde_types::SourceProperties;
+use util::StringifyError;
 
 lazy_static! {
     /// The URL of the BigML API.
-    static ref BIGML_URL: Url = Url::parse("https://bigml.io/") // "http://localhost:8000"
+    static ref BIGML_URL: Url = Url::parse("https://bigml.io/")
         .expect("Cannot parse BigML URL in source code");
 }
 
@@ -49,69 +51,56 @@ impl Client {
     /// Create a BigML data source using data from the specified path.  We
     /// stream the data over the network without trying to load it all into
     /// memory.
-    pub fn source_create_from_path<P>(&self, path: P) -> Result<String>
+    pub fn source_create_from_path<P>(&self, path: P) -> Result<SourceProperties>
         where P: AsRef<Path>
     {
-        // Open up our file.
         let path = path.as_ref();
-        let filename = path.to_string_lossy();
-        let file = fs::File::open(&path)
+        let mut body = multipart_form_data::Body::new("file", path)
             .chain_err(|| ErrorKind::CouldNotReadFile(path.to_owned()))?;
 
-        // Create a streaming, multi-part encoder.  Don't even think of
-        // reading all the data into memory; there may be 10s of gigabytes
-        // for some applications.
+        // TODO: File upstream. Work around the facts that:
         //
-        // TODO: Escape filename.
-        let boundary = format!("--------------------------{}", Uuid::new_v4());
-        let header = format!("--{}\r
-Content-Disposition: form-data; name=\"file\"; filename=\"{}\"\r
-Content-Type: application/octet-stream\r
-\r
-", &boundary, filename);
-        let footer = format!("\r
---{}--\r
-", &boundary);
-        let mut body = io::Cursor::new(header)
-            .chain(file)
-            .chain(io::Cursor::new(footer));
-
-        // Read back our data.
+        // 1. `reqwest` can't take a `Read` impl and a size as imput, and so
+        //    it falls back to `chunked` mode if given a reader, and
+        // 2. BigML can't handle chunked transfer encoding,
+        //
+        // ...by reading everything into memory.
         let mut body_data = vec![];
         body.read_to_end(&mut body_data)
             .chain_err(|| ErrorKind::CouldNotReadFile(path.to_owned()))?;
-
-        // Generate an appropriate Content-Type header.
-        let mime = mime::Mime(mime::TopLevel::Multipart,
-                              mime::SubLevel::FormData,
-                              vec![(mime::Attr::Boundary,
-                                    mime::Value::Ext(boundary))]);
 
         // Post our request.
         let url = self.url("/source")?;
         let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
         let client = reqwest::Client::new()
-            // TODO: https://github.com/seanmonstar/reqwest/issues/17
-            .map_err(|e| { let kind: Error = format!("{}", e).into(); kind })
+            .stringify_error()
             .chain_err(&mkerr)?;
-        let mut res = client.post(url.clone())
-            .header(reqwest::header::ContentType(mime))
+        let res = client.post(url.clone())
+            .header(reqwest::header::ContentType(body.mime_type()))
             .body(body_data)
             .send()
-            .map_err(|e| { let kind: Error = format!("{}", e).into(); kind })
+            .stringify_error()
             .chain_err(&mkerr)?;
+        self.handle_response(res).chain_err(&mkerr)
+    }
 
+    /// Handle a response from the server, deserializing it as the
+    /// appropriate type.
+    fn handle_response<T>(&self, mut res: reqwest::Response) -> Result<T>
+        where T: Deserialize
+    {
         if res.status().is_success() {
             let mut body = String::new();
-            res.read_to_string(&mut body).chain_err(&mkerr)?;
-            Ok(body)
+            res.read_to_string(&mut body)?;
+            let properties = serde_json::from_str(&body)?;
+            Ok(properties)
         } else {
             let mut body = String::new();
-            res.read_to_string(&mut body).chain_err(&mkerr)?;
-            println!("Error body: {}", body);
-            let err: Error = ErrorKind::UnexpectedHttpStatus(res.status().to_owned())
-                .into();
-            Err(err).chain_err(&mkerr)
+            res.read_to_string(&mut body)?;
+            let err: Error =
+                ErrorKind::UnexpectedHttpStatus(res.status().to_owned()).into();
+            Err(err)
         }
+
     }
 }
