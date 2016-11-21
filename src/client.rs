@@ -103,6 +103,8 @@ impl Client {
             if res.status.code.is_ready() {
                 return Ok(res);
             } else if res.status.code.is_err() {
+                // TODO: We can probably allow a few errors before giving
+                // up.
                 let err: Error = res.status.message.into();
                 return Err(err).chain_err(&mkerr);
             }
@@ -130,6 +132,5 @@ impl Client {
                 ErrorKind::UnexpectedHttpStatus(res.status().to_owned()).into();
             Err(err)
         }
-
     }
 }
