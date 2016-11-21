@@ -5,6 +5,8 @@ use serde::Deserialize;
 use serde_json;
 use std::io::Read;
 use std::path::Path;
+use std::thread::sleep;
+use std::time::Duration;
 use url::Url;
 
 use errors::*;
@@ -82,6 +84,33 @@ impl Client {
             .stringify_error()
             .chain_err(&mkerr)?;
         self.handle_response(res).chain_err(&mkerr)
+    }
+
+    /// Poll an existing resource.
+    pub fn wait(&self, resource: &str) -> Result<SourceProperties> {
+        let url = self.url(resource)?;
+        let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+        loop {
+            let client = reqwest::Client::new()
+                .stringify_error()
+                .chain_err(&mkerr)?;
+            let res = client.get(url.clone())
+                .send()
+                .stringify_error()
+                .chain_err(&mkerr)?;
+            let res: SourceProperties = self.handle_response(res)
+                .chain_err(&mkerr)?;
+            if res.status.code.is_ready() {
+                return Ok(res);
+            } else if res.status.code.is_err() {
+                let err: Error = res.status.message.into();
+                return Err(err).chain_err(&mkerr);
+            }
+
+            // If we're not ready, then sleep 5 seconds.  Anything less
+            // than 4 may get us rate-limited or banned.
+            sleep(Duration::from_secs(5));
+        }
     }
 
     /// Handle a response from the server, deserializing it as the
