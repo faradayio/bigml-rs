@@ -5,6 +5,7 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::result;
 use std::str::FromStr;
+use serde_json;
 
 use errors::*;
 
@@ -164,6 +165,90 @@ impl<R: Resource> Serialize for ResourceId<R> {
         self.id.serialize(serializer)
     }
 }
+
+//-------------------------------------------------------------------------
+// Executions
+
+/// An execution of a WhizzML script.
+pub struct Execution;
+
+impl Resource for Execution {
+    type Properties = ExecutionProperties;
+
+    fn id_prefix() -> &'static str {
+        "execution/"
+    }
+}
+
+/// Properties of BigML source.
+///
+/// TODO: Still lots of missing fields.
+#[derive(Debug, Deserialize)]
+pub struct ExecutionProperties {
+    /// Used to classify by industry or category.  0 is "Miscellaneous".
+    pub category: i64,
+
+    /// An HTTP status code, typically either 201 or 200.
+    ///
+    /// TODO: Deserialize as a `reqwest::StatusCode`?
+    pub code: u16,
+
+    /// Text describing this source.  May contain limited Markdown.
+    pub description: String,
+
+    /// Further information about this execution.
+    pub execution: ExecutionData,
+
+    /// The name of this execution.
+    pub name: String,
+
+    /// The ID of this execution.
+    pub resource: ResourceId<Execution>,
+
+    // The script executed.
+    //pub script: ResourceId<Script>,
+
+    /// The current status of this execution.
+    pub status: ExecutionStatus,
+}
+
+/// Data about a script execution.
+///
+/// TODO: Lots of missing fields.
+#[derive(Debug, Deserialize)]
+pub struct ExecutionData {
+    /// Names, values and types of resources output by the script.
+    outputs: Vec<(String, serde_json::Value, String)>,
+
+    /// Result values from the script.
+    result: Vec<serde_json::Value>,
+}
+
+/// Status of a script execution.
+///
+/// TODO: Lots of missing fields.
+#[derive(Debug, Deserialize)]
+pub struct ExecutionStatus {
+    /// Status code.
+    code: ResourceStatusCode,
+
+    /// Human-readable status message.
+    message: String,
+}
+
+impl ResourceProperties for ExecutionProperties {
+    fn status_code(&self) -> ResourceStatusCode {
+        self.status.code
+    }
+
+    fn status_message(&self) -> &str {
+        &self.status.message
+    }
+}
+
+
+//-------------------------------------------------------------------------
+// Sources
 
 /// A data source used by BigML.
 pub struct Source;
