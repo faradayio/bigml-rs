@@ -34,5 +34,12 @@ error_chain! {
             description("Unexpected HTTP status")
             display("{}", &status)
         }
+
+        /// We found a type mismatch deserializing a BigML resource ID.
+        WrongResourceType(expected: &'static str, found: String) {
+            description("Wrong BigML resource type found")
+            display("Expected BigML resource ID starting with '{}', found '{}'",
+                    expected, &found)
+        }
     }
 }

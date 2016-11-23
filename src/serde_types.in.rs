@@ -1,7 +1,12 @@
 // Included directly into client.rs after pre-processing by serde.
 
-use serde::{self, Deserialize, Deserializer};
+use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt;
+use std::marker::PhantomData;
 use std::result;
+use std::str::FromStr;
+
+use errors::*;
 
 /// A BigML status code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -67,15 +72,108 @@ impl Deserialize for ResourceStatusCode {
     }
 }
 
-/// The status of a BitML source.
-#[derive(Debug, Deserialize)]
-pub struct SourceStatus {
-    /// A code describing the status.
-    pub code: ResourceStatusCode,
-    /// A human-readable message explaining the status.
-    pub message: String,
-    /// The number of milliseconds spent processing the source.
-    pub elapsed: Option<u64>,
+/// This trait allows access to common properties shared by all resource
+/// types.
+pub trait ResourceProperties: fmt::Debug + Deserialize {
+    /// The status code for this resource.
+    fn status_code(&self) -> ResourceStatusCode;
+    /// A human-readable message describing the status of this resource.
+    fn status_message(&self) -> &str;
+}
+
+/// A trait representing a BigML data type.  Caution!  This is a very
+/// abstract trait and implementations are not expected to carry any actual
+/// data.  Rather, this mostly exists to be used as a "tag" and to create
+/// associations between related types.
+pub trait Resource {
+    /// The properties of resources of this type.
+    type Properties: ResourceProperties;
+
+    /// The prefix used for all IDs of this type.
+    fn id_prefix() -> &'static str;
+}
+
+/// A strongly-typed "resource ID" used to identify many different kinds of
+/// BigML resources.
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ResourceId<R: Resource> {
+    /// The ID of the resource.
+    id: String,
+    /// A special 0-byte field which exists just to mention the type `R`
+    /// inside the struct, and thus avoid compiler errors about unused type
+    /// parameters.
+    _phantom: PhantomData<R>,
+}
+
+impl<R: Resource> ResourceId<R> {
+    /// Get this resource as a string.
+    pub fn as_str(&self) -> &str {
+        &self.id
+    }
+}
+
+impl<R: Resource> FromStr for ResourceId<R> {
+    type Err = Error;
+
+    fn from_str(id: &str) -> Result<Self> {
+        if !id.starts_with(R::id_prefix()) {
+            Ok(ResourceId {
+                id: id.to_owned(),
+                _phantom: PhantomData,
+            })
+        } else {
+            Err(ErrorKind::WrongResourceType(R::id_prefix(), id.to_owned()).into())
+        }
+    }
+}
+
+impl<R: Resource> fmt::Debug for ResourceId<R> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "{}", &self.id)
+    }
+}
+
+impl<R: Resource> fmt::Display for ResourceId<R> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "{}", &self.id)
+    }
+}
+
+impl<R: Resource> Deserialize for ResourceId<R> {
+    fn deserialize<D>(deserializer: &mut D) -> result::Result<Self, D::Error>
+        where D: Deserializer
+    {
+        let id: String = String::deserialize(deserializer)?;
+        if !id.starts_with(R::id_prefix()) {
+            Ok(ResourceId {
+                id: id,
+                _phantom: PhantomData,
+            })
+        } else {
+            let err: Error =
+                ErrorKind::WrongResourceType(R::id_prefix(), id).into();
+            Err(<D::Error as serde::Error>::invalid_value(&format!("{}", err)))
+        }
+    }
+}
+
+impl<R: Resource> Serialize for ResourceId<R> {
+    fn serialize<S>(&self, serializer: &mut S) -> result::Result<(), S::Error>
+        where S: Serializer
+    {
+        self.id.serialize(serializer)
+    }
+}
+
+/// A data source used by BigML.
+pub struct Source;
+
+impl Resource for Source {
+    type Properties = SourceProperties;
+
+    fn id_prefix() -> &'static str {
+        "source/"
+    }
 }
 
 /// Properties of BigML source.
@@ -108,7 +206,7 @@ pub struct SourceProperties {
     pub name: String,
 
     /// The identifier for this source.
-    pub resource: String,
+    pub resource: ResourceId<Source>,
 
     /// The number of bytes of the source.
     pub size: u64,
@@ -119,4 +217,25 @@ pub struct SourceProperties {
     /// A hidden field to allow future extensibility.
     #[serde(default)]
     _hidden: (),
+}
+
+impl ResourceProperties for SourceProperties {
+    fn status_code(&self) -> ResourceStatusCode {
+        self.status.code
+    }
+
+    fn status_message(&self) -> &str {
+        &self.status.message
+    }
+}
+
+/// The status of a BitML source.
+#[derive(Debug, Deserialize)]
+pub struct SourceStatus {
+    /// A code describing the status.
+    pub code: ResourceStatusCode,
+    /// A human-readable message explaining the status.
+    pub message: String,
+    /// The number of milliseconds spent processing the source.
+    pub elapsed: Option<u64>,
 }

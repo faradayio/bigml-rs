@@ -11,7 +11,7 @@ use url::Url;
 
 use errors::*;
 use multipart_form_data;
-use serde_types::SourceProperties;
+use serde_types::{Resource, ResourceId, ResourceProperties, SourceProperties};
 use util::StringifyError;
 
 lazy_static! {
@@ -43,11 +43,11 @@ impl Client {
     }
 
     /// Generate an authenticate URL with the specified path.
-    fn url(&self, path: &str) -> Result<Url> {
+    fn url(&self, path: &str) -> Url {
         let mut url: Url = BIGML_URL.clone();
         url.set_path(path);
         url.set_query(Some(&self.auth()));
-        Ok(url)
+        url
     }
 
     /// Create a BigML data source using data from the specified path.  We
@@ -72,7 +72,7 @@ impl Client {
             .chain_err(|| ErrorKind::CouldNotReadFile(path.to_owned()))?;
 
         // Post our request.
-        let url = self.url("/source")?;
+        let url = self.url("/source");
         let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
         let client = reqwest::Client::new()
             .stringify_error()
@@ -86,31 +86,41 @@ impl Client {
         self.handle_response(res).chain_err(&mkerr)
     }
 
-    /// Poll an existing resource.
-    pub fn wait(&self, resource: &str) -> Result<SourceProperties> {
-        let url = self.url(resource)?;
+    /// Fetch an existing resource.
+    pub fn fetch<R: Resource>(&self, resource: &ResourceId<R>)
+                              -> Result<R::Properties> {
+        let url = self.url(resource.as_str());
         let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+        let client = reqwest::Client::new()
+            .stringify_error()
+            .chain_err(&mkerr)?;
+        let res = client.get(url.clone())
+            .send()
+            .stringify_error()
+            .chain_err(&mkerr)?;
+        self.handle_response(res).chain_err(&mkerr)
+    }
+
+    /// Poll an existing resource, returning it once it's ready.
+    pub fn wait<R: Resource>(&self, resource: &ResourceId<R>)
+                             -> Result<R::Properties> {
         loop {
-            let client = reqwest::Client::new()
-                .stringify_error()
-                .chain_err(&mkerr)?;
-            let res = client.get(url.clone())
-                .send()
-                .stringify_error()
-                .chain_err(&mkerr)?;
-            let res: SourceProperties = self.handle_response(res)
-                .chain_err(&mkerr)?;
-            if res.status.code.is_ready() {
+            let res = self.fetch(resource)?;
+            if res.status_code().is_ready() {
                 return Ok(res);
-            } else if res.status.code.is_err() {
-                // TODO: We can probably allow a few errors before giving
-                // up.
-                let err: Error = res.status.message.into();
-                return Err(err).chain_err(&mkerr);
+            } else if res.status_code().is_err() {
+                // TODO: We should probably allow a few errors before
+                // giving up, and we should probably have some sort of
+                // timeout.
+                let err: Error = res.status_message().into();
+                let url = self.url(resource.as_str());
+                return Err(err)
+                    .chain_err(|| ErrorKind::CouldNotAccessUrl(url.clone()));
             }
 
             // If we're not ready, then sleep 5 seconds.  Anything less
-            // than 4 may get us rate-limited or banned.
+            // than 4 may get us rate-limited or banned according to BigML
+            // support.
             sleep(Duration::from_secs(5));
         }
     }
