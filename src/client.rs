@@ -53,7 +53,7 @@ impl Client {
     /// Create a BigML data source using data from the specified path.  We
     /// stream the data over the network without trying to load it all into
     /// memory.
-    pub fn source_create_from_path<P>(&self, path: P) -> Result<SourceProperties>
+    pub fn create_source_from_path<P>(&self, path: P) -> Result<SourceProperties>
         where P: AsRef<Path>
     {
         let path = path.as_ref();
