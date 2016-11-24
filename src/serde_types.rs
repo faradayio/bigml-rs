@@ -224,45 +224,16 @@ impl<R: Resource> Serialize for ResourceId<R> {
 }
 
 //-------------------------------------------------------------------------
-// Model type
-
-/// BigML supports two main kinds of models: "classification" models, which
-/// are used to predict category properties, and "regression" models, which
-/// are used to predict numeric properties.  These models are treated
-/// differently in many places.
-///
-/// `ModelType` is a "marker" trait that we use to keep track of which kind
-/// of model we're working with.  It allows us to figure out which related
-/// types are associated with each model.
-///
-/// We inherit from the trait `fmt::Debug`, not because anybody should ever
-/// create or print a `ModelType`, but because we're used as type parameter
-/// to many structs which `#[derive(Debug)]`, which won't work unless all
-/// type parameters are themselves `fmt::Debug`, even if they're not needed
-/// to print the struct.
-///
-/// TODO: Remove `Deserialize` trait once we finish collapsing types a bit.
-pub trait ModelType: fmt::Debug + Deserialize {
-    /// The results of an evaluation of this model.
-    type EvaluationResult: fmt::Debug + Deserialize + Serialize + 'static;
-}
-
-/// Classification models are used to predict category properties.
-#[derive(Debug, Deserialize)]
-pub struct ClassificationModel;
-
-impl ModelType for ClassificationModel {
-    type EvaluationResult = ClassificationEvaluationResult;
-}
-
-// TODO: RegressionModel and RegressionEvaluationResult.
-
-//-------------------------------------------------------------------------
 // Resource definition tools
 
 macro_rules! resource {
     (
         api_name $string_name:expr;
+
+        // The pattern `$(<$($Ty : $Tr),*>)*` is overly generous.  We want
+        // to match an optional set of type parameters of the form `<Name:
+        // Trait, ...>`, but Rust macros have no easy "match 0 or 1"
+        // mechanism, so we match 0 or more `<...>` patterns instead.
 
         $(#[ $meta:meta ])*
         pub struct $name:ident $(<$($Ty:ident : $Tr:ident),*>)* {
@@ -374,20 +345,24 @@ resource! {
 resource! {
     api_name "evaluation";
 
-    /// Properties of a BigML evaluation.
+    /// An evaluation of how well a model (or ensemble) predicts the data.
     ///
     /// TODO: Still lots of missing fields.
     #[derive(Debug, Deserialize)]
-    pub struct Evaluation<M: ModelType> {
+    pub struct Evaluation<R: EvaluationResult> {
         /// The status of this resource.
         pub status: GenericResourceStatus,
 
         /// The result of this evaluation.
-        pub result: M::EvaluationResult,
+        pub result: R,
     }
 }
 
 /// The result of an evaluation.
+pub trait EvaluationResult: fmt::Debug + Deserialize + Serialize + Sized {
+}
+
+/// The result of evaluating a classifier.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ClassificationEvaluationResult {
     /// The names of our classifications.
@@ -409,6 +384,8 @@ pub struct ClassificationEvaluationResult {
     #[serde(default, skip_serializing)]
     _hidden: (),
 }
+
+impl EvaluationResult for ClassificationEvaluationResult {}
 
 /// The detailed result of an evaluation using specific criteria.
 #[derive(Debug, Deserialize, Serialize)]
@@ -453,14 +430,15 @@ pub struct ClassificationPerClassStatistics {
     pub recall: f64,
 }
 
+// TODO: RegressionEvaluationResult.
+
 //-------------------------------------------------------------------------
 // Executions
 
-// An execution of a WhizzML script.
 resource! {
     api_name "execution";
 
-    /// Properties of a BigML execution.
+    /// An execution of a WhizzML script.
     ///
     /// TODO: Still lots of missing fields.
     #[derive(Debug, Deserialize)]
@@ -493,11 +471,10 @@ pub struct ExecutionData {
 //-------------------------------------------------------------------------
 // Sources
 
-// A data source used by BigML.
 resource! {
     api_name "source";
 
-    /// Properties of BigML source.
+    /// A data source used by BigML.
     ///
     /// TODO: Still lots of missing fields.
     #[derive(Debug, Deserialize)]
