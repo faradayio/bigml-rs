@@ -9,6 +9,9 @@ use serde_json;
 
 use errors::*;
 
+//-------------------------------------------------------------------------
+// ResourceStatus interfaces
+
 /// A BigML status code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceStatusCode {
@@ -132,6 +135,9 @@ impl ResourceStatus for GenericResourceStatus {
     }
 }
 
+//-------------------------------------------------------------------------
+// ResourceProperties interfaces
+
 /// This trait allows access to common properties shared by all resource
 /// types.
 pub trait ResourceProperties: fmt::Debug + Deserialize {
@@ -150,6 +156,9 @@ pub trait Resource {
     /// The prefix used for all IDs of this type.
     fn id_prefix() -> &'static str;
 }
+
+//-------------------------------------------------------------------------
+// ResourceId
 
 /// A strongly-typed "resource ID" used to identify many different kinds of
 /// BigML resources.
@@ -252,6 +261,8 @@ pub struct ClassificationModel;
 impl ModelType for ClassificationModel {
     type EvaluationResult = ClassificationEvaluationResult;
 }
+
+// TODO: RegressionModel and RegressionEvaluationResult.
 
 //-------------------------------------------------------------------------
 // Ensemble
