@@ -1,4 +1,4 @@
-// Included directly into client.rs after pre-processing by serde.
+//! Resource types manipulated by the BigML API.
 
 use serde::Deserialize;
 use std::fmt;
@@ -9,10 +9,10 @@ pub use self::status::*;
 
 // We only re-export the main names from our resource submodules.  For any
 // other types, use a fully-qualified name.
-pub use ensemble::Ensemble;
-pub use evaluation::Evaluation;
-pub use execution::Execution;
-pub use source::Source;
+pub use self::ensemble::Ensemble;
+pub use self::evaluation::Evaluation;
+pub use self::execution::Execution;
+pub use self::source::Source;
 
 macro_rules! resource {
     (

@@ -27,7 +27,7 @@ pub enum ResourceStatusCode {
 impl ResourceStatusCode {
     /// Is BigML still working on ingesting and processing this resource?
     pub fn is_working(self) -> bool {
-        use ResourceStatusCode::*;
+        use self::ResourceStatusCode::*;
         match self {
             Waiting | Queued | Started | InProgress | Summarized => true,
             _ => false,
