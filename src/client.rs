@@ -11,7 +11,7 @@ use url::Url;
 
 use errors::*;
 use multipart_form_data;
-use serde_types::{Resource, ResourceId, Source};
+use resource::{Resource, ResourceId, Source};
 use util::StringifyError;
 
 lazy_static! {

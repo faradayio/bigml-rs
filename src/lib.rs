@@ -24,12 +24,12 @@ extern crate uuid;
 
 pub use client::Client;
 pub use errors::*;
-pub use serde_types::*;
+pub use resource::*;
 
 mod client;
 mod errors;
 mod multipart_form_data;
-mod serde_types;
+mod resource;
 mod util;
 
 #[cfg(test)]
