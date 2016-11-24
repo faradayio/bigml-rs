@@ -73,13 +73,70 @@ impl Deserialize for ResourceStatusCode {
     }
 }
 
+/// Status of a resource.  BigML actually defines many different "status"
+/// types, one for each resource, but quite a few of them have are highly
+/// similar.  This interface tries to generalize over the most common
+/// versions.
+pub trait ResourceStatus {
+    /// Status code.
+    fn code(&self) -> ResourceStatusCode;
+
+    /// Human-readable status message.
+    fn message(&self) -> &str;
+
+    /// Number of milliseconds which were needed to create this resource.
+    fn elapsed(&self) -> Option<u64>;
+
+    /// Number between 0.0 and 1.0 representing the progress of creating
+    /// this resource.
+    fn progress(&self) -> Option<f32>;
+}
+
+/// Status of a generic resource.
+#[derive(Debug, Deserialize)]
+pub struct GenericResourceStatus {
+    /// Status code.
+    pub code: ResourceStatusCode,
+
+    /// Human-readable status message.
+    pub message: String,
+
+    /// Number of milliseconds which were needed to create this resource.
+    pub elapsed: Option<u64>,
+
+    /// Number between 0.0 and 1.0 representing the progress of creating
+    /// this resource.
+    pub progress: Option<f32>,
+
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
+}
+
+impl ResourceStatus for GenericResourceStatus {
+    fn code(&self) -> ResourceStatusCode {
+        self.code
+    }
+
+    fn message(&self) -> &str {
+        &self.message
+    }
+
+    fn elapsed(&self) -> Option<u64> {
+        self.elapsed
+    }
+
+    fn progress(&self) -> Option<f32> {
+        self.progress
+    }
+}
+
 /// This trait allows access to common properties shared by all resource
 /// types.
 pub trait ResourceProperties: fmt::Debug + Deserialize {
     /// The status code for this resource.
-    fn status_code(&self) -> ResourceStatusCode;
-    /// A human-readable message describing the status of this resource.
-    fn status_message(&self) -> &str;
+    fn status(&self) -> &ResourceStatus;
 }
 
 /// A trait representing a BigML data type.  Caution!  This is a very
@@ -167,6 +224,138 @@ impl<R: Resource> Serialize for ResourceId<R> {
 }
 
 //-------------------------------------------------------------------------
+// Model type
+
+/// BigML supports two main kinds of models: "classification" models, which
+/// are used to predict category properties, and "regression" models, which
+/// are used to predict numeric properties.  These models are treated
+/// differently in many places.
+///
+/// `ModelType` is a "marker" trait that we use to keep track of which kind
+/// of model we're working with.  It allows us to figure out which related
+/// types are associated with each model.
+///
+/// We inherit from the trait `fmt::Debug`, not because anybody should ever
+/// create or print a `ModelType`, but because we're used as type parameter
+/// to many structs which `#[derive(Debug)]`, which won't work unless all
+/// type parameters are themselves `fmt::Debug`, even if they're not needed
+/// to print the struct.
+pub trait ModelType: fmt::Debug {
+    /// The results of an evaluation of this model.
+    type EvaluationResult: fmt::Debug + Deserialize + Serialize + 'static;
+}
+
+/// Classification models are used to predict category properties.
+#[derive(Debug)]
+pub struct ClassificationModel;
+
+impl ModelType for ClassificationModel {
+    type EvaluationResult = ClassificationEvaluationResult;
+}
+
+
+//-------------------------------------------------------------------------
+// Evaluation
+
+/// An execution of a WhizzML script.
+pub struct Evaluation<M: ModelType> {
+    /// A special 0-byte field which exists just to mention the type `M`
+    /// inside the struct, and thus avoid compiler errors about unused type
+    /// parameters.
+    _phantom: PhantomData<M>,
+}
+
+impl<M: ModelType> Resource for Evaluation<M> {
+    type Properties = EvaluationProperties<M>;
+
+    fn id_prefix() -> &'static str {
+        "evaluation/"
+    }
+}
+
+/// Properties of a BigML evaluation.
+///
+/// TODO: Still lots of missing fields.
+#[derive(Debug, Deserialize)]
+pub struct EvaluationProperties<M: ModelType> {
+    /// The result of this evaluation.
+    pub result: M::EvaluationResult,
+
+    /// The status of this resource.
+    pub status: GenericResourceStatus,
+
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
+}
+
+impl<M: ModelType> ResourceProperties for EvaluationProperties<M> {
+    fn status(&self) -> &ResourceStatus {
+        &self.status
+    }
+}
+
+/// The result of an evaluation.
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ClassificationEvaluationResult {
+    /// The names of our classifications.
+    pub class_names: Vec<String>,
+
+    /// According to BigML, "Measures the performance of the classifier
+    /// that predicts the mode class for all the instances in the dataset."
+    pub mode: DetailedClassificationEvaluationResult,
+
+    /// The performance of this model.
+    pub model: DetailedClassificationEvaluationResult,
+
+    /// According to BigML, "Measures the performance of the classifier
+    /// that predicts a random class for all the instances in the dataset."
+    pub random: DetailedClassificationEvaluationResult,
+
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
+}
+
+/// The detailed result of an evaluation using specific criteria.
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DetailedClassificationEvaluationResult {
+    /// The portion of instances we classified correctly.
+    accuracy: f64,
+    /// The average f-measure over all classes.
+    average_f_measure: f64,
+    /// The average phi over all classes.
+    average_phi: f64,
+    /// The average precision over all classes.
+    average_precision: f64,
+    /// The average recall over all classes.
+    average_recall: f64,
+    /// A list of rows of the confusion matrix for this model.
+    confusion_matrix: Vec<Vec<f64>>,
+    /// Statistics for each of the individidual classes.
+    per_class_statistics: Vec<ClassificationPerClassStatistics>,
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
+}
+
+/// The detailed result of an evaluation using specific criteria.
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ClassificationPerClassStatistics {
+    accuracy: f64,
+    class_name: String,
+    f_measure: f64,
+    one_point_auc: f64,
+    phi_coefficient: f64,
+    precision: f64,
+    present_in_test_data: bool,
+    recall: f64,
+}
+
+//-------------------------------------------------------------------------
 // Executions
 
 /// An execution of a WhizzML script.
@@ -180,7 +369,7 @@ impl Resource for Execution {
     }
 }
 
-/// Properties of BigML source.
+/// Properties of a BigML source.
 ///
 /// TODO: Still lots of missing fields.
 #[derive(Debug, Deserialize)]
@@ -209,7 +398,18 @@ pub struct ExecutionProperties {
     //pub script: ResourceId<Script>,
 
     /// The current status of this execution.
-    pub status: ExecutionStatus,
+    pub status: GenericResourceStatus,
+
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
+}
+
+impl ResourceProperties for ExecutionProperties {
+    fn status(&self) -> &ResourceStatus {
+        &self.status
+    }
 }
 
 /// Data about a script execution.
@@ -222,29 +422,13 @@ pub struct ExecutionData {
 
     /// Result values from the script.
     result: Vec<serde_json::Value>,
+
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
 }
 
-/// Status of a script execution.
-///
-/// TODO: Lots of missing fields.
-#[derive(Debug, Deserialize)]
-pub struct ExecutionStatus {
-    /// Status code.
-    code: ResourceStatusCode,
-
-    /// Human-readable status message.
-    message: String,
-}
-
-impl ResourceProperties for ExecutionProperties {
-    fn status_code(&self) -> ResourceStatusCode {
-        self.status.code
-    }
-
-    fn status_message(&self) -> &str {
-        &self.status.message
-    }
-}
 
 
 //-------------------------------------------------------------------------
@@ -297,30 +481,16 @@ pub struct SourceProperties {
     pub size: u64,
 
     /// The status of this source.
-    pub status: SourceStatus,
+    pub status: GenericResourceStatus,
 
-    /// A hidden field to allow future extensibility.
-    #[serde(default)]
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    #[serde(default, skip_serializing)]
     _hidden: (),
 }
 
 impl ResourceProperties for SourceProperties {
-    fn status_code(&self) -> ResourceStatusCode {
-        self.status.code
+    fn status(&self) -> &ResourceStatus {
+        &self.status
     }
-
-    fn status_message(&self) -> &str {
-        &self.status.message
-    }
-}
-
-/// The status of a BitML source.
-#[derive(Debug, Deserialize)]
-pub struct SourceStatus {
-    /// A code describing the status.
-    pub code: ResourceStatusCode,
-    /// A human-readable message explaining the status.
-    pub message: String,
-    /// The number of milliseconds spent processing the source.
-    pub elapsed: Option<u64>,
 }

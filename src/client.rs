@@ -106,13 +106,13 @@ impl Client {
                              -> Result<R::Properties> {
         loop {
             let res = self.fetch(resource)?;
-            if res.status_code().is_ready() {
+            if res.status().code().is_ready() {
                 return Ok(res);
-            } else if res.status_code().is_err() {
+            } else if res.status().code().is_err() {
                 // TODO: We should probably allow a few errors before
                 // giving up, and we should probably have some sort of
                 // timeout.
-                let err: Error = res.status_message().into();
+                let err: Error = res.status().message().into();
                 let url = self.url(resource.as_str());
                 return Err(err)
                     .chain_err(|| ErrorKind::CouldNotAccessUrl(url.clone()));
