@@ -346,6 +346,11 @@ macro_rules! resource {
             /// The ID of this execution.
             pub resource: ResourceId<$name>,
 
+            /// Having one hidden field makes it possible to extend this struct
+            /// without breaking semver API guarantees.
+             #[serde(default, skip_serializing)]
+            _hidden: (),
+
             $(
                 $(#[ $field_type_meta ])*
                 pub $field_name: $field_ty
@@ -360,71 +365,25 @@ macro_rules! resource {
     };
 }
 
-resource! {
-    name Ensemble2, "ensemble2";
-
-    /// Ensemble2Properties doc blah blah.
-    #[derive(Debug, Deserialize)]
-    pub struct Ensemble2Properties {
-        /// Our mandatory status field.
-        pub status: GenericResourceStatus,
-    }
-}
-
 //-------------------------------------------------------------------------
 // Ensemble
 
-/// A group of many related models.
-pub struct Ensemble;
+// An ensemble of multiple predictive models.
+resource! {
+    name Ensemble, "ensemble";
 
-impl Resource for Ensemble {
-    type Properties = EnsembleProperties;
-
-    fn id_prefix() -> &'static str {
-        "execution/"
-    }
-}
-
-/// Properties of an ensemble resource.
-///
-/// TODO: Still lots of missing fields.
-#[derive(Debug, Deserialize)]
-pub struct EnsembleProperties {
-    /// Used to classify by industry or category.  0 is "Miscellaneous".
-    pub category: i64,
-
-    /// An HTTP status code, typically either 201 or 200.
+    /// Properties of an ensemble resource.
     ///
-    /// TODO: Deserialize as a `reqwest::StatusCode`?
-    pub code: u16,
+    /// TODO: Still lots of missing fields.
+    #[derive(Debug, Deserialize)]
+    pub struct EnsembleProperties {
+        /// The current status of this ensemble.
+        pub status: GenericResourceStatus,
 
-    // The dataset used to create this ensemble.
-    //pub dataset: ResourceId<Dataset>,
-
-    /// Text describing this source.  May contain limited Markdown.
-    pub description: String,
-
-    /// The name of this execution.
-    pub name: String,
-
-    /// The ID of this execution.
-    pub resource: ResourceId<Execution>,
-
-    /// The current status of this execution.
-    pub status: GenericResourceStatus,
-
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
-}
-
-impl ResourceProperties for EnsembleProperties {
-    fn status(&self) -> &ResourceStatus {
-        &self.status
+        // The dataset used to create this ensemble.
+        //pub dataset: ResourceId<Dataset>,
     }
 }
-
 
 //-------------------------------------------------------------------------
 // Evaluation
@@ -537,57 +496,20 @@ pub struct ClassificationPerClassStatistics {
 //-------------------------------------------------------------------------
 // Executions
 
-/// An execution of a WhizzML script.
-pub struct Execution;
+// An execution of a WhizzML script.
+resource! {
+    name Execution, "execution";
 
-impl Resource for Execution {
-    type Properties = ExecutionProperties;
-
-    fn id_prefix() -> &'static str {
-        "execution/"
-    }
-}
-
-/// Properties of a BigML source.
-///
-/// TODO: Still lots of missing fields.
-#[derive(Debug, Deserialize)]
-pub struct ExecutionProperties {
-    /// Used to classify by industry or category.  0 is "Miscellaneous".
-    pub category: i64,
-
-    /// An HTTP status code, typically either 201 or 200.
+    /// Properties of a BigML execution.
     ///
-    /// TODO: Deserialize as a `reqwest::StatusCode`?
-    pub code: u16,
+    /// TODO: Still lots of missing fields.
+    #[derive(Debug, Deserialize)]
+    pub struct ExecutionProperties {
+        /// The current status of this execution.
+        pub status: GenericResourceStatus,
 
-    /// Text describing this source.  May contain limited Markdown.
-    pub description: String,
-
-    /// Further information about this execution.
-    pub execution: ExecutionData,
-
-    /// The name of this execution.
-    pub name: String,
-
-    /// The ID of this execution.
-    pub resource: ResourceId<Execution>,
-
-    // The script executed.
-    //pub script: ResourceId<Script>,
-
-    /// The current status of this execution.
-    pub status: GenericResourceStatus,
-
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
-}
-
-impl ResourceProperties for ExecutionProperties {
-    fn status(&self) -> &ResourceStatus {
-        &self.status
+        /// Further information about this execution.
+        pub execution: ExecutionData,
     }
 }
 
@@ -608,68 +530,28 @@ pub struct ExecutionData {
     _hidden: (),
 }
 
-
-
 //-------------------------------------------------------------------------
 // Sources
 
-/// A data source used by BigML.
-pub struct Source;
+// A data source used by BigML.
+resource! {
+    name Source, "source";
 
-impl Resource for Source {
-    type Properties = SourceProperties;
-
-    fn id_prefix() -> &'static str {
-        "source/"
-    }
-}
-
-/// Properties of BigML source.
-///
-/// TODO: Still lots of missing fields.
-#[derive(Debug, Deserialize)]
-pub struct SourceProperties {
-    /// Used to classify data by industry or category.  0 is
-    /// "Miscellaneous".
-    pub category: i64,
-
-    /// An HTTP status code, typically either 201 or 200.
+    /// Properties of BigML source.
     ///
-    /// TODO: Deserialize as a `reqwest::StatusCode`?
-    pub code: u16,
+    /// TODO: Still lots of missing fields.
+    #[derive(Debug, Deserialize)]
+    pub struct SourceProperties {
+        /// The status of this source.
+        pub status: GenericResourceStatus,
 
-    /// The number of credits it cost to create this source.
-    pub credits: f64,
+        /// The name of the file uploaded.
+        pub file_name: String,
 
-    /// Text describing this source.  May contain limited Markdown.
-    pub description: String,
+        /// An MD5 hash of the uploaded file.
+        pub md5: String,
 
-    /// The name of the file uploaded.
-    pub file_name: String,
-
-    /// An MD5 hash of the uploaded file.
-    pub md5: String,
-
-    /// The name of this data source.
-    pub name: String,
-
-    /// The identifier for this source.
-    pub resource: ResourceId<Source>,
-
-    /// The number of bytes of the source.
-    pub size: u64,
-
-    /// The status of this source.
-    pub status: GenericResourceStatus,
-
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
-}
-
-impl ResourceProperties for SourceProperties {
-    fn status(&self) -> &ResourceStatus {
-        &self.status
+        /// The number of bytes of the source.
+        pub size: u64,
     }
 }
