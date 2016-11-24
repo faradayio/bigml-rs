@@ -8,6 +8,7 @@
 
 #![warn(missing_docs)]
 
+extern crate chrono;
 #[macro_use]
 extern crate error_chain;
 #[macro_use]

@@ -1,5 +1,6 @@
 // Included directly into client.rs after pre-processing by serde.
 
+use chrono::{DateTime, UTC};
 use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 use std::marker::PhantomData;
@@ -263,6 +264,112 @@ impl ModelType for ClassificationModel {
 }
 
 // TODO: RegressionModel and RegressionEvaluationResult.
+
+//-------------------------------------------------------------------------
+// Resource definition tools
+
+macro_rules! resource {
+    (
+        name $name:ident, $string_name:expr;
+
+        $(#[ $property_type_meta:meta ])*
+        pub struct $property_type:ident {
+            $(
+                $(#[ $field_type_meta:meta ])*
+                pub $field_name:ident: $field_ty:ty,
+            )*
+        }
+
+    ) => {
+        /// Tag type (never instantiated) used to identify resources of
+        /// this type throughout the API.
+        pub struct $name;
+
+        impl Resource for $name {
+            type Properties = $property_type;
+
+            fn id_prefix() -> &'static str {
+                concat!($string_name, "/")
+            }
+        }
+
+        $(#[ $property_type_meta ])*
+        pub struct $property_type {
+            // Start by declaring the fields which appear on every resource
+            // type.  We should theoretically implement this using
+            // inheritance, but Rust doesn't have implementation
+            // inheritance.  We could also implement this using various
+            // other Rust patterns like delegation, but that would mean
+            // that serde could no longer assume a simple 1-to-1 mapping
+            // between Rust and JSON types. So we just use a macro to do
+            // some code gen, and we define a `ResourceProperties` trait
+            // that we can use to access any duplicated bits using a single
+            // API.
+
+            /// Used to classify by industry or category.  0 is "Miscellaneous".
+            pub category: i64,
+
+            /// An HTTP status code, typically either 201 or 200.
+            ///
+            /// TODO: Deserialize as a `reqwest::StatusCode`?
+            pub code: u16,
+
+            /// The time this resource was created.
+            pub created: DateTime<UTC>,
+
+            /// Was this created in development mode?
+            pub dev: bool,
+
+            /// Text describing this resource.  May contain limited Markdown.
+            pub description: String,
+
+            /// The name of this resource
+            pub name: String,
+
+            // What project is this associated with?
+            //
+            // TODO: Define `Project` type and then enable this.
+            //pub project: ResourceId<Project>,
+
+            /// Has this been shared using a private link?
+            pub shared: bool,
+
+            /// Was this created using a subscription plan?
+            pub subscription: bool,
+
+            /// User-defined tags.
+            pub tags: Vec<String>,
+
+            /// The last time this was updated.
+            pub updated: DateTime<UTC>,
+
+            /// The ID of this execution.
+            pub resource: ResourceId<$name>,
+
+            $(
+                $(#[ $field_type_meta ])*
+                pub $field_name: $field_ty
+            ),*
+        }
+
+        impl ResourceProperties for $property_type {
+            fn status(&self) -> &ResourceStatus {
+                &self.status
+            }
+        }
+    };
+}
+
+resource! {
+    name Ensemble2, "ensemble2";
+
+    /// Ensemble2Properties doc blah blah.
+    #[derive(Debug, Deserialize)]
+    pub struct Ensemble2Properties {
+        /// Our mandatory status field.
+        pub status: GenericResourceStatus,
+    }
+}
 
 //-------------------------------------------------------------------------
 // Ensemble
