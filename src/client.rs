@@ -11,7 +11,7 @@ use url::Url;
 
 use errors::*;
 use multipart_form_data;
-use serde_types::{Resource, ResourceId, ResourceProperties, SourceProperties};
+use serde_types::{Resource, ResourceId, Source};
 use util::StringifyError;
 
 lazy_static! {
@@ -53,7 +53,7 @@ impl Client {
     /// Create a BigML data source using data from the specified path.  We
     /// stream the data over the network without trying to load it all into
     /// memory.
-    pub fn create_source_from_path<P>(&self, path: P) -> Result<SourceProperties>
+    pub fn create_source_from_path<P>(&self, path: P) -> Result<Source>
         where P: AsRef<Path>
     {
         let path = path.as_ref();
@@ -87,8 +87,7 @@ impl Client {
     }
 
     /// Fetch an existing resource.
-    pub fn fetch<R: Resource>(&self, resource: &ResourceId<R>)
-                              -> Result<R::Properties> {
+    pub fn fetch<R: Resource>(&self, resource: &ResourceId<R>) -> Result<R> {
         let url = self.url(resource.as_str());
         let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
         let client = reqwest::Client::new()
@@ -102,8 +101,7 @@ impl Client {
     }
 
     /// Poll an existing resource, returning it once it's ready.
-    pub fn wait<R: Resource>(&self, resource: &ResourceId<R>)
-                             -> Result<R::Properties> {
+    pub fn wait<R: Resource>(&self, resource: &ResourceId<R>) -> Result<R> {
         loop {
             let res = self.fetch(resource)?;
             if res.status().code().is_ready() {

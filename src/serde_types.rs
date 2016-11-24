@@ -137,25 +137,15 @@ impl ResourceStatus for GenericResourceStatus {
 }
 
 //-------------------------------------------------------------------------
-// ResourceProperties interfaces
+// Resource interface
 
-/// This trait allows access to common properties shared by all resource
-/// types.
-pub trait ResourceProperties: fmt::Debug + Deserialize {
-    /// The status code for this resource.
-    fn status(&self) -> &ResourceStatus;
-}
-
-/// A trait representing a BigML data type.  Caution!  This is a very
-/// abstract trait and implementations are not expected to carry any actual
-/// data.  Rather, this mostly exists to be used as a "tag" and to create
-/// associations between related types.
-pub trait Resource {
-    /// The properties of resources of this type.
-    type Properties: ResourceProperties;
-
+/// A shared interface to all BigML data types.
+pub trait Resource: fmt::Debug + Deserialize {
     /// The prefix used for all IDs of this type.
     fn id_prefix() -> &'static str;
+
+    /// The status code for this resource.
+    fn status(&self) -> &ResourceStatus;
 }
 
 //-------------------------------------------------------------------------
@@ -272,10 +262,10 @@ impl ModelType for ClassificationModel {
 
 macro_rules! resource {
     (
-        name $name:ident, $string_name:expr;
+        api_name $string_name:expr;
 
-        $(#[ $property_type_meta:meta ])*
-        pub struct $property_type:ident $(<$($Ty:ident : $Tr:ident),*>)* {
+        $(#[ $meta:meta ])*
+        pub struct $name:ident $(<$($Ty:ident : $Tr:ident),*>)* {
             $(
                 $(#[ $field_type_meta:meta ])*
                 pub $field_name:ident: $field_ty:ty,
@@ -283,24 +273,8 @@ macro_rules! resource {
         }
 
     ) => {
-        /// Tag type (never instantiated) used to identify resources of
-        /// this type throughout the API.
+        $(#[ $meta ])*
         pub struct $name $(<$($Ty : $Tr),*>)* {
-            $(
-                $(_hidden: PhantomData<$Ty>)*,
-            )*
-        }
-
-        impl $(<$($Ty : $Tr),*>)* Resource for $name $(<$($Ty),*>)* {
-            type Properties = $property_type $(<$($Ty),*>)*;
-
-            fn id_prefix() -> &'static str {
-                concat!($string_name, "/")
-            }
-        }
-
-        $(#[ $property_type_meta ])*
-        pub struct $property_type $(<$($Ty : $Tr),*>)* {
             // Start by declaring the fields which appear on every resource
             // type.  We should theoretically implement this using
             // inheritance, but Rust doesn't have implementation
@@ -308,9 +282,8 @@ macro_rules! resource {
             // other Rust patterns like delegation, but that would mean
             // that serde could no longer assume a simple 1-to-1 mapping
             // between Rust and JSON types. So we just use a macro to do
-            // some code gen, and we define a `ResourceProperties` trait
-            // that we can use to access any duplicated bits using a single
-            // API.
+            // some code gen, and we define a `Resource` trait that we can
+            // use to access any duplicated bits using a single API.
 
             /// Used to classify by industry or category.  0 is "Miscellaneous".
             pub category: i64,
@@ -363,7 +336,11 @@ macro_rules! resource {
             ),*
         }
 
-        impl $(<$($Ty : $Tr),*>)* ResourceProperties for $property_type $(<$($Ty),*>)* {
+        impl $(<$($Ty : $Tr),*>)* Resource for $name $(<$($Ty),*>)* {
+            fn id_prefix() -> &'static str {
+                concat!($string_name, "/")
+            }
+
             fn status(&self) -> &ResourceStatus {
                 &self.status
             }
@@ -376,13 +353,13 @@ macro_rules! resource {
 
 // An ensemble of multiple predictive models.
 resource! {
-    name Ensemble, "ensemble";
+    api_name "ensemble";
 
     /// Properties of an ensemble resource.
     ///
     /// TODO: Still lots of missing fields.
     #[derive(Debug, Deserialize)]
-    pub struct EnsembleProperties {
+    pub struct Ensemble {
         /// The current status of this ensemble.
         pub status: GenericResourceStatus,
 
@@ -395,13 +372,13 @@ resource! {
 // Evaluation
 
 resource! {
-    name Evaluation, "evaluation";
+    api_name "evaluation";
 
     /// Properties of a BigML evaluation.
     ///
     /// TODO: Still lots of missing fields.
     #[derive(Debug, Deserialize)]
-    pub struct EvaluationProperties<M: ModelType> {
+    pub struct Evaluation<M: ModelType> {
         /// The status of this resource.
         pub status: GenericResourceStatus,
 
@@ -481,13 +458,13 @@ pub struct ClassificationPerClassStatistics {
 
 // An execution of a WhizzML script.
 resource! {
-    name Execution, "execution";
+    api_name "execution";
 
     /// Properties of a BigML execution.
     ///
     /// TODO: Still lots of missing fields.
     #[derive(Debug, Deserialize)]
-    pub struct ExecutionProperties {
+    pub struct Execution {
         /// The current status of this execution.
         pub status: GenericResourceStatus,
 
@@ -518,13 +495,13 @@ pub struct ExecutionData {
 
 // A data source used by BigML.
 resource! {
-    name Source, "source";
+    api_name "source";
 
     /// Properties of BigML source.
     ///
     /// TODO: Still lots of missing fields.
     #[derive(Debug, Deserialize)]
-    pub struct SourceProperties {
+    pub struct Source {
         /// The status of this source.
         pub status: GenericResourceStatus,
 
