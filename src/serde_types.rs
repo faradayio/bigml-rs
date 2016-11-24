@@ -250,13 +250,15 @@ impl<R: Resource> Serialize for ResourceId<R> {
 /// to many structs which `#[derive(Debug)]`, which won't work unless all
 /// type parameters are themselves `fmt::Debug`, even if they're not needed
 /// to print the struct.
-pub trait ModelType: fmt::Debug {
+///
+/// TODO: Remove `Deserialize` trait once we finish collapsing types a bit.
+pub trait ModelType: fmt::Debug + Deserialize {
     /// The results of an evaluation of this model.
     type EvaluationResult: fmt::Debug + Deserialize + Serialize + 'static;
 }
 
 /// Classification models are used to predict category properties.
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct ClassificationModel;
 
 impl ModelType for ClassificationModel {
@@ -273,7 +275,7 @@ macro_rules! resource {
         name $name:ident, $string_name:expr;
 
         $(#[ $property_type_meta:meta ])*
-        pub struct $property_type:ident {
+        pub struct $property_type:ident $(<$($Ty:ident : $Tr:ident),*>)* {
             $(
                 $(#[ $field_type_meta:meta ])*
                 pub $field_name:ident: $field_ty:ty,
@@ -283,10 +285,14 @@ macro_rules! resource {
     ) => {
         /// Tag type (never instantiated) used to identify resources of
         /// this type throughout the API.
-        pub struct $name;
+        pub struct $name $(<$($Ty : $Tr),*>)* {
+            $(
+                $(_hidden: PhantomData<$Ty>)*,
+            )*
+        }
 
-        impl Resource for $name {
-            type Properties = $property_type;
+        impl $(<$($Ty : $Tr),*>)* Resource for $name $(<$($Ty),*>)* {
+            type Properties = $property_type $(<$($Ty),*>)*;
 
             fn id_prefix() -> &'static str {
                 concat!($string_name, "/")
@@ -294,7 +300,7 @@ macro_rules! resource {
         }
 
         $(#[ $property_type_meta ])*
-        pub struct $property_type {
+        pub struct $property_type $(<$($Ty : $Tr),*>)* {
             // Start by declaring the fields which appear on every resource
             // type.  We should theoretically implement this using
             // inheritance, but Rust doesn't have implementation
@@ -344,7 +350,7 @@ macro_rules! resource {
             pub updated: DateTime<UTC>,
 
             /// The ID of this execution.
-            pub resource: ResourceId<$name>,
+            pub resource: ResourceId<$name $(<$($Ty),*>)*>,
 
             /// Having one hidden field makes it possible to extend this struct
             /// without breaking semver API guarantees.
@@ -357,7 +363,7 @@ macro_rules! resource {
             ),*
         }
 
-        impl ResourceProperties for $property_type {
+        impl $(<$($Ty : $Tr),*>)* ResourceProperties for $property_type $(<$($Ty),*>)* {
             fn status(&self) -> &ResourceStatus {
                 &self.status
             }
@@ -388,42 +394,19 @@ resource! {
 //-------------------------------------------------------------------------
 // Evaluation
 
-/// An execution of a WhizzML script.
-pub struct Evaluation<M: ModelType> {
-    /// A special 0-byte field which exists just to mention the type `M`
-    /// inside the struct, and thus avoid compiler errors about unused type
-    /// parameters.
-    _phantom: PhantomData<M>,
-}
+resource! {
+    name Evaluation, "evaluation";
 
-impl<M: ModelType> Resource for Evaluation<M> {
-    type Properties = EvaluationProperties<M>;
+    /// Properties of a BigML evaluation.
+    ///
+    /// TODO: Still lots of missing fields.
+    #[derive(Debug, Deserialize)]
+    pub struct EvaluationProperties<M: ModelType> {
+        /// The status of this resource.
+        pub status: GenericResourceStatus,
 
-    fn id_prefix() -> &'static str {
-        "evaluation/"
-    }
-}
-
-/// Properties of a BigML evaluation.
-///
-/// TODO: Still lots of missing fields.
-#[derive(Debug, Deserialize)]
-pub struct EvaluationProperties<M: ModelType> {
-    /// The result of this evaluation.
-    pub result: M::EvaluationResult,
-
-    /// The status of this resource.
-    pub status: GenericResourceStatus,
-
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
-}
-
-impl<M: ModelType> ResourceProperties for EvaluationProperties<M> {
-    fn status(&self) -> &ResourceStatus {
-        &self.status
+        /// The result of this evaluation.
+        pub result: M::EvaluationResult,
     }
 }
 
