@@ -253,6 +253,60 @@ impl ModelType for ClassificationModel {
     type EvaluationResult = ClassificationEvaluationResult;
 }
 
+//-------------------------------------------------------------------------
+// Ensemble
+
+/// A group of many related models.
+pub struct Ensemble;
+
+impl Resource for Ensemble {
+    type Properties = EnsembleProperties;
+
+    fn id_prefix() -> &'static str {
+        "execution/"
+    }
+}
+
+/// Properties of an ensemble resource.
+///
+/// TODO: Still lots of missing fields.
+#[derive(Debug, Deserialize)]
+pub struct EnsembleProperties {
+    /// Used to classify by industry or category.  0 is "Miscellaneous".
+    pub category: i64,
+
+    /// An HTTP status code, typically either 201 or 200.
+    ///
+    /// TODO: Deserialize as a `reqwest::StatusCode`?
+    pub code: u16,
+
+    // The dataset used to create this ensemble.
+    //pub dataset: ResourceId<Dataset>,
+
+    /// Text describing this source.  May contain limited Markdown.
+    pub description: String,
+
+    /// The name of this execution.
+    pub name: String,
+
+    /// The ID of this execution.
+    pub resource: ResourceId<Execution>,
+
+    /// The current status of this execution.
+    pub status: GenericResourceStatus,
+
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
+}
+
+impl ResourceProperties for EnsembleProperties {
+    fn status(&self) -> &ResourceStatus {
+        &self.status
+    }
+}
+
 
 //-------------------------------------------------------------------------
 // Evaluation
