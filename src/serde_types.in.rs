@@ -323,19 +323,19 @@ pub struct ClassificationEvaluationResult {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DetailedClassificationEvaluationResult {
     /// The portion of instances we classified correctly.
-    accuracy: f64,
+    pub accuracy: f64,
     /// The average f-measure over all classes.
-    average_f_measure: f64,
+    pub average_f_measure: f64,
     /// The average phi over all classes.
-    average_phi: f64,
+    pub average_phi: f64,
     /// The average precision over all classes.
-    average_precision: f64,
+    pub average_precision: f64,
     /// The average recall over all classes.
-    average_recall: f64,
+    pub average_recall: f64,
     /// A list of rows of the confusion matrix for this model.
-    confusion_matrix: Vec<Vec<f64>>,
+    pub confusion_matrix: Vec<Vec<f64>>,
     /// Statistics for each of the individidual classes.
-    per_class_statistics: Vec<ClassificationPerClassStatistics>,
+    pub per_class_statistics: Vec<ClassificationPerClassStatistics>,
     /// Having one hidden field makes it possible to extend this struct
     /// without breaking semver API guarantees.
     #[serde(default, skip_serializing)]
@@ -345,14 +345,21 @@ pub struct DetailedClassificationEvaluationResult {
 /// The detailed result of an evaluation using specific criteria.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ClassificationPerClassStatistics {
-    accuracy: f64,
-    class_name: String,
-    f_measure: f64,
-    one_point_auc: f64,
-    phi_coefficient: f64,
-    precision: f64,
-    present_in_test_data: bool,
-    recall: f64,
+    /// The portion of instances in this class that were correctly
+    /// classified.
+    pub accuracy: f64,
+    /// The the of this class.
+    pub class_name: String,
+    /// The harmonic mean of precision and recall.
+    pub f_measure: f64,
+    /// See
+    /// [Wikipedia](http://en.wikipedia.org/wiki/Matthews_correlation_coefficient).
+    pub phi_coefficient: f64,
+    /// The fraction of positives that were true positives. (TP / (TP + FP))
+    pub precision: f64,
+    /// The number of true positives over the number of actual positives in
+    /// the dataset. (TP / (TP + FN))
+    pub recall: f64,
 }
 
 //-------------------------------------------------------------------------
