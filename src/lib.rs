@@ -1,5 +1,9 @@
 //! A Rust client for BigML's REST API.
 
+// Needed for serde_derive until Macros 1.1 stablizes (in Rust 1.15?).
+#![feature(proc_macro)]
+
+// Needed for error-chain.
 #![recursion_limit = "1024"]
 
 #![warn(missing_docs)]
@@ -11,6 +15,8 @@ extern crate lazy_static;
 extern crate mime;
 extern crate reqwest;
 extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 extern crate serde_json;
 extern crate url;
 extern crate uuid;
@@ -22,12 +28,8 @@ pub use serde_types::*;
 mod client;
 mod errors;
 mod multipart_form_data;
+mod serde_types;
 mod util;
-
-/// Types preprocessed by serde.
-mod serde_types {
-    include!(concat!(env!("OUT_DIR"), "/serde_types.rs"));
-}
 
 #[cfg(test)]
 mod tests {
