@@ -100,7 +100,7 @@ macro_rules! resource {
                 concat!($string_name, "/")
             }
 
-            fn status(&self) -> &ResourceStatus {
+            fn status(&self) -> &Status {
                 &self.status
             }
         }
@@ -113,7 +113,7 @@ pub trait Resource: fmt::Debug + Deserialize {
     fn id_prefix() -> &'static str;
 
     /// The status code for this resource.
-    fn status(&self) -> &ResourceStatus;
+    fn status(&self) -> &Status;
 }
 
 // Support modules defining general types.

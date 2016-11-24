@@ -15,7 +15,7 @@ resource! {
     #[derive(Debug, Deserialize)]
     pub struct Ensemble {
         /// The current status of this ensemble.
-        pub status: GenericResourceStatus,
+        pub status: GenericStatus,
 
         // The dataset used to create this ensemble.
         //pub dataset: ResourceId<Dataset>,

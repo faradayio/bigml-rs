@@ -5,7 +5,7 @@ use std::result;
 
 /// A BigML status code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ResourceStatusCode {
+pub enum StatusCode {
     /// BigML is waiting on another resource before processing this one.
     Waiting,
     /// The processing job has been added to the queue.
@@ -24,10 +24,10 @@ pub enum ResourceStatusCode {
     Unknown,
 }
 
-impl ResourceStatusCode {
+impl StatusCode {
     /// Is BigML still working on ingesting and processing this resource?
     pub fn is_working(self) -> bool {
-        use self::ResourceStatusCode::*;
+        use self::StatusCode::*;
         match self {
             Waiting | Queued | Started | InProgress | Summarized => true,
             _ => false,
@@ -36,29 +36,29 @@ impl ResourceStatusCode {
 
     /// Has BigML successfully finished processing this resource?
     pub fn is_ready(self) -> bool {
-        self == ResourceStatusCode::Finished
+        self == StatusCode::Finished
     }
 
     /// Did something go wrong while processing this resource?
     pub fn is_err(self) -> bool {
-        self == ResourceStatusCode::Faulty ||
-            self == ResourceStatusCode::Unknown
+        self == StatusCode::Faulty ||
+            self == StatusCode::Unknown
     }
 }
 
-impl Deserialize for ResourceStatusCode {
+impl Deserialize for StatusCode {
     fn deserialize<D>(deserializer: &mut D) -> result::Result<Self, D::Error>
         where D: Deserializer
     {
         match i64::deserialize(deserializer)? {
-            0 => Ok(ResourceStatusCode::Waiting),
-            1 => Ok(ResourceStatusCode::Queued),
-            2 => Ok(ResourceStatusCode::Started),
-            3 => Ok(ResourceStatusCode::InProgress),
-            4 => Ok(ResourceStatusCode::Summarized),
-            5 => Ok(ResourceStatusCode::Finished),
-            -1 => Ok(ResourceStatusCode::Faulty),
-            -2 => Ok(ResourceStatusCode::Unknown),
+            0 => Ok(StatusCode::Waiting),
+            1 => Ok(StatusCode::Queued),
+            2 => Ok(StatusCode::Started),
+            3 => Ok(StatusCode::InProgress),
+            4 => Ok(StatusCode::Summarized),
+            5 => Ok(StatusCode::Finished),
+            -1 => Ok(StatusCode::Faulty),
+            -2 => Ok(StatusCode::Unknown),
             code => {
                 let msg = format!("Unknown BigML resource status code {}", code);
                 Err(<D::Error as serde::Error>::invalid_value(&msg))
@@ -71,9 +71,9 @@ impl Deserialize for ResourceStatusCode {
 /// types, one for each resource, but quite a few of them have are highly
 /// similar.  This interface tries to generalize over the most common
 /// versions.
-pub trait ResourceStatus {
+pub trait Status {
     /// Status code.
-    fn code(&self) -> ResourceStatusCode;
+    fn code(&self) -> StatusCode;
 
     /// Human-readable status message.
     fn message(&self) -> &str;
@@ -88,9 +88,9 @@ pub trait ResourceStatus {
 
 /// Status of a generic resource.
 #[derive(Debug, Deserialize)]
-pub struct GenericResourceStatus {
+pub struct GenericStatus {
     /// Status code.
-    pub code: ResourceStatusCode,
+    pub code: StatusCode,
 
     /// Human-readable status message.
     pub message: String,
@@ -108,8 +108,8 @@ pub struct GenericResourceStatus {
     _hidden: (),
 }
 
-impl ResourceStatus for GenericResourceStatus {
-    fn code(&self) -> ResourceStatusCode {
+impl Status for GenericStatus {
+    fn code(&self) -> StatusCode {
         self.code
     }
 

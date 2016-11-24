@@ -16,10 +16,10 @@ resource! {
     #[derive(Debug, Deserialize)]
     pub struct Execution {
         /// The current status of this execution.
-        pub status: GenericResourceStatus,
+        pub status: GenericStatus,
 
         /// Further information about this execution.
-        pub execution: ExecutionData,
+        pub execution: Data,
     }
 }
 
@@ -27,7 +27,7 @@ resource! {
 ///
 /// TODO: Lots of missing fields.
 #[derive(Debug, Deserialize)]
-pub struct ExecutionData {
+pub struct Data {
     /// Names, values and types of resources output by the script.
     outputs: Vec<(String, serde_json::Value, String)>,
 

@@ -15,7 +15,7 @@ resource! {
     #[derive(Debug, Deserialize)]
     pub struct Source {
         /// The status of this source.
-        pub status: GenericResourceStatus,
+        pub status: GenericStatus,
 
         /// The name of the file uploaded.
         pub file_name: String,

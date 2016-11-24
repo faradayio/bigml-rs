@@ -15,9 +15,9 @@ resource! {
     ///
     /// TODO: Still lots of missing fields.
     #[derive(Debug, Deserialize)]
-    pub struct Evaluation<R: EvaluationResult> {
+    pub struct Evaluation<R: Result> {
         /// The status of this resource.
-        pub status: GenericResourceStatus,
+        pub status: GenericStatus,
 
         /// The result of this evaluation.
         pub result: R,
@@ -25,25 +25,28 @@ resource! {
 }
 
 /// The result of an evaluation.
-pub trait EvaluationResult: fmt::Debug + Deserialize + Serialize + Sized {
+///
+/// TODO: I'm not sure we want to shadow `Result`.  But this name will
+/// basically always be qualified, so maybe it's OK.
+pub trait Result: fmt::Debug + Deserialize + Serialize + Sized {
 }
 
 /// The result of evaluating a classifier.
 #[derive(Debug, Deserialize, Serialize)]
-pub struct ClassificationEvaluationResult {
+pub struct ClassificationResult {
     /// The names of our classifications.
     pub class_names: Vec<String>,
 
     /// According to BigML, "Measures the performance of the classifier
     /// that predicts the mode class for all the instances in the dataset."
-    pub mode: DetailedClassificationEvaluationResult,
+    pub mode: DetailedClassificationResult,
 
     /// The performance of this model.
-    pub model: DetailedClassificationEvaluationResult,
+    pub model: DetailedClassificationResult,
 
     /// According to BigML, "Measures the performance of the classifier
     /// that predicts a random class for all the instances in the dataset."
-    pub random: DetailedClassificationEvaluationResult,
+    pub random: DetailedClassificationResult,
 
     /// Having one hidden field makes it possible to extend this struct
     /// without breaking semver API guarantees.
@@ -51,11 +54,11 @@ pub struct ClassificationEvaluationResult {
     _hidden: (),
 }
 
-impl EvaluationResult for ClassificationEvaluationResult {}
+impl Result for ClassificationResult {}
 
 /// The detailed result of an evaluation using specific criteria.
 #[derive(Debug, Deserialize, Serialize)]
-pub struct DetailedClassificationEvaluationResult {
+pub struct DetailedClassificationResult {
     /// The portion of instances we classified correctly.
     pub accuracy: f64,
     /// The average f-measure over all classes.
@@ -96,4 +99,4 @@ pub struct ClassificationPerClassStatistics {
     pub recall: f64,
 }
 
-// TODO: RegressionEvaluationResult.
+// TODO: RegressionResult.
