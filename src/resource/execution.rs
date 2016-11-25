@@ -34,7 +34,7 @@ pub struct Data {
     // bother messing with it.  Use `result.outputs` when present instead.
 
     /// Result values from the script.
-    result: Option<Vec<serde_json::Value>>,
+    pub result: Option<Vec<serde_json::Value>>,
 
     /// Having one hidden field makes it possible to extend this struct
     /// without breaking semver API guarantees.
