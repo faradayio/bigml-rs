@@ -13,6 +13,8 @@ extern crate chrono;
 extern crate error_chain;
 #[macro_use]
 extern crate lazy_static;
+#[macro_use]
+extern crate log;
 extern crate mime;
 extern crate reqwest;
 extern crate serde;

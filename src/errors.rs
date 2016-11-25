@@ -30,9 +30,9 @@ error_chain! {
         }
 
         /// We received an unexpected HTTP status code.
-        UnexpectedHttpStatus(status: reqwest::StatusCode) {
+        UnexpectedHttpStatus(status: reqwest::StatusCode, body: String) {
             description("Unexpected HTTP status")
-            display("{}", &status)
+            display("{} ({})", &status, &body)
         }
 
         /// We found a type mismatch deserializing a BigML resource ID.

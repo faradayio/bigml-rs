@@ -1,6 +1,6 @@
 //! Resource types manipulated by the BigML API.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
 // We re-export everything from our support submodules.
@@ -12,7 +12,32 @@ pub use self::status::*;
 pub use self::ensemble::Ensemble;
 pub use self::evaluation::Evaluation;
 pub use self::execution::Execution;
+pub use self::script::Script;
 pub use self::source::Source;
+
+/// A shared interface to all BigML resource types.
+pub trait Resource: fmt::Debug + Deserialize {
+    /// The prefix used for all IDs of this type.
+    fn id_prefix() -> &'static str;
+
+    /// The URL path used to create a new resource of this type.
+    fn create_path() -> &'static str;
+
+    /// The ID of this resource.
+    fn id(&self) -> &Id<Self>;
+
+    /// The status code for this resource.
+    ///
+    /// TODO: Does this need to go in a separate trait in order to maintain
+    /// trait object support?
+    fn status(&self) -> &Status;
+}
+
+/// Arguments which can be used to create a resource.
+pub trait Args: fmt::Debug + Serialize {
+    /// The resource type these arguments create.
+    type Resource: Resource;
+}
 
 macro_rules! resource {
     (
@@ -52,11 +77,13 @@ macro_rules! resource {
             /// TODO: Deserialize as a `reqwest::StatusCode`?
             pub code: u16,
 
-            /// The time this resource was created.
-            pub created: DateTime<UTC>,
+            // The time this resource was created.
+            //
+            // TODO: The response is missing the `Z`, which makes chrono sad.
+            //pub created: DateTime<UTC>,
 
             /// Was this created in development mode?
-            pub dev: bool,
+            pub dev: Option<bool>,
 
             /// Text describing this resource.  May contain limited Markdown.
             pub description: String,
@@ -67,7 +94,7 @@ macro_rules! resource {
             // What project is this associated with?
             //
             // TODO: Define `Project` type and then enable this.
-            //pub project: ResourceId<Project>,
+            //pub project: Id<Project>,
 
             /// Has this been shared using a private link?
             pub shared: bool,
@@ -78,11 +105,13 @@ macro_rules! resource {
             /// User-defined tags.
             pub tags: Vec<String>,
 
-            /// The last time this was updated.
-            pub updated: DateTime<UTC>,
+            // The last time this was updated.
+            //
+            // TODO: The response is missing the `Z`, which makes chrono sad.
+            //pub updated: DateTime<UTC>,
 
             /// The ID of this execution.
-            pub resource: ResourceId<$name $(<$($Ty),*>)*>,
+            pub resource: Id<$name $(<$($Ty),*>)*>,
 
             /// Having one hidden field makes it possible to extend this struct
             /// without breaking semver API guarantees.
@@ -100,6 +129,14 @@ macro_rules! resource {
                 concat!($string_name, "/")
             }
 
+            fn create_path() -> &'static str {
+                concat!("/", $string_name)
+            }
+
+            fn id(&self) -> &Id<Self> {
+                &self.resource
+            }
+
             fn status(&self) -> &Status {
                 &self.status
             }
@@ -107,21 +144,14 @@ macro_rules! resource {
     };
 }
 
-/// A shared interface to all BigML resource types.
-pub trait Resource: fmt::Debug + Deserialize {
-    /// The prefix used for all IDs of this type.
-    fn id_prefix() -> &'static str;
-
-    /// The status code for this resource.
-    fn status(&self) -> &Status;
-}
-
 // Support modules defining general types.
 mod id;
 mod status;
 
-// Individual resource types.
+// Individual resource types.  These need to go after our `response!` macro
+// definition, above, because macros are processed as source is being read.
 pub mod ensemble;
 pub mod evaluation;
 pub mod execution;
+pub mod script;
 pub mod source;

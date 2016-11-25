@@ -1,7 +1,5 @@
 //! An ensemble of multiple predictive models.
 
-use chrono::{DateTime, UTC};
-
 use super::Resource;
 use super::id::*;
 use super::status::*;
@@ -18,6 +16,6 @@ resource! {
         pub status: GenericStatus,
 
         // The dataset used to create this ensemble.
-        //pub dataset: ResourceId<Dataset>,
+        //pub dataset: Id<Dataset>,
     }
 }

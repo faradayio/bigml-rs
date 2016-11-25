@@ -11,7 +11,7 @@ use url::Url;
 
 use errors::*;
 use multipart_form_data;
-use resource::{Resource, ResourceId, Source};
+use resource::{self, Id, Resource, Source};
 use util::StringifyError;
 
 lazy_static! {
@@ -48,6 +48,31 @@ impl Client {
         url.set_path(path);
         url.set_query(Some(&self.auth()));
         url
+    }
+
+    /// Create a new resource.
+    pub fn create<Args>(&self, args: &Args) -> Result<Args::Resource>
+        where Args: resource::Args
+    {
+        let url = self.url(Args::Resource::create_path());
+        debug!("POST {} {:#?}", Args::Resource::create_path(), &serde_json::to_string(args));
+        let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+        let client = reqwest::Client::new()
+            .stringify_error()
+            .chain_err(&mkerr)?;
+        let res = client.post(url.clone())
+            .json(args)
+            .send()
+            .stringify_error()
+            .chain_err(&mkerr)?;
+        self.handle_response(res).chain_err(&mkerr)
+    }
+
+    /// Create a new resource, and wait until it is ready.
+    pub fn create_and_wait<Args>(&self, args: &Args) -> Result<Args::Resource>
+        where Args: resource::Args
+    {
+        self.wait(self.create(args)?.id())
     }
 
     /// Create a BigML data source using data from the specified path.  We
@@ -87,7 +112,7 @@ impl Client {
     }
 
     /// Fetch an existing resource.
-    pub fn fetch<R: Resource>(&self, resource: &ResourceId<R>) -> Result<R> {
+    pub fn fetch<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
         let url = self.url(resource.as_str());
         let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
         let client = reqwest::Client::new()
@@ -101,7 +126,7 @@ impl Client {
     }
 
     /// Poll an existing resource, returning it once it's ready.
-    pub fn wait<R: Resource>(&self, resource: &ResourceId<R>) -> Result<R> {
+    pub fn wait<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
         loop {
             let res = self.fetch(resource)?;
             if res.status().code().is_ready() {
@@ -131,13 +156,15 @@ impl Client {
         if res.status().is_success() {
             let mut body = String::new();
             res.read_to_string(&mut body)?;
+            debug!("Success body: {}", &body);
             let properties = serde_json::from_str(&body)?;
             Ok(properties)
         } else {
             let mut body = String::new();
             res.read_to_string(&mut body)?;
+            debug!("Error body: {}", &body);
             let err: Error =
-                ErrorKind::UnexpectedHttpStatus(res.status().to_owned()).into();
+                ErrorKind::UnexpectedHttpStatus(res.status().to_owned(), body).into();
             Err(err)
         }
     }

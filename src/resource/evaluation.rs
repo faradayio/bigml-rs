@@ -1,6 +1,5 @@
 //! An evaluation of how well a model (or ensemble) predicts the data.
 
-use chrono::{DateTime, UTC};
 use serde::{Serialize, Deserialize};
 use std::fmt;
 

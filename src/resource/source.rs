@@ -1,7 +1,5 @@
 //! A data source used by BigML.
 
-use chrono::{DateTime, UTC};
-
 use super::Resource;
 use super::id::*;
 use super::status::*;
