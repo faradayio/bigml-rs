@@ -1,6 +1,9 @@
 //! Resource identifiers used by the BigML API.
 
+#[cfg(feature="postgres")]
+use postgres as pg;
 use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+use std::error;
 use std::fmt;
 use std::marker::PhantomData;
 use std::result;
@@ -78,5 +81,42 @@ impl<R: Resource> Serialize for Id<R> {
         where S: Serializer
     {
         self.id.serialize(serializer)
+    }
+}
+
+#[cfg(feature="postgres")]
+impl<R: Resource> pg::types::ToSql for Id<R> {
+    fn to_sql(&self,
+              ty: &pg::types::Type,
+              out: &mut Vec<u8>,
+              ctx: &pg::types::SessionInfo)
+              -> result::Result<pg::types::IsNull, Box<error::Error + Sync + Send>>
+        where Self: Sized
+    {
+        self.id.to_sql(ty, out, ctx)
+    }
+
+    fn accepts(ty: &pg::types::Type) -> bool where Self: Sized {
+        String::accepts(ty)
+    }
+
+    to_sql_checked!();
+}
+
+#[cfg(feature="postgres")]
+impl<R: Resource> pg::types::FromSql for Id<R> {
+    fn from_sql(ty: &pg::types::Type, raw: &[u8], ctx: &pg::types::SessionInfo)
+                -> result::Result<Self, Box<error::Error + Sync + Send>> {
+        String::from_sql(ty, raw, ctx)
+            .and_then(|s| {
+                // We smash all errors to strings, because `error-chain`
+                // doesn't declare errors as `Sync`, which `postgres` wants
+                // here.
+                Id::from_str(&s).map_err(|e| format!("{}", e).into())
+            })
+    }
+
+    fn accepts(ty: &pg::types::Type) -> bool {
+        String::accepts(ty)
     }
 }

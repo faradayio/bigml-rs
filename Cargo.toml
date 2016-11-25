@@ -9,6 +9,9 @@ readme = "README.md"
 repository = "https://github.com/faradayio/bigml-rs"
 documentation = "https://docs.rs/bigml/"
 
+[features]
+postgresql = ["postgres"]
+
 [dev-dependencies]
 env_logger = "0.3.5"
 
@@ -18,6 +21,7 @@ error-chain = "0.5.0"
 lazy_static = "0.2.2"
 log = "0.3.6"
 mime = "0.2.2"
+postgres = { version = "0.13.3", optional = true }
 reqwest = "0.1.0"
 serde = "0.8.19"
 serde_derive = "0.8.19"
