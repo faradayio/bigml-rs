@@ -47,6 +47,18 @@ pub struct Data {
     _hidden: (),
 }
 
+impl Data {
+    /// Get a named output of this execution.
+    pub fn get<D: Deserialize>(&self, name: &str) -> Result<D> {
+        for output in &self.outputs {
+            if output.name == name {
+                return output.get();
+            }
+        }
+        Err(ErrorKind::CouldNotGetOutput(name.to_owned()).into())
+    }
+}
+
 /// Arguments for creating a script execution.
 ///
 /// TODO: Lots of missing fields.
