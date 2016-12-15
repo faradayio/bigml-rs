@@ -141,10 +141,10 @@ impl Client {
                     .chain_err(|| ErrorKind::CouldNotAccessUrl(url.clone()));
             }
 
-            // If we're not ready, then sleep 5 seconds.  Anything less
+            // If we're not ready, then sleep 10 seconds.  Anything less
             // than 4 may get us rate-limited or banned according to BigML
             // support.
-            sleep(Duration::from_secs(5));
+            sleep(Duration::from_secs(10));
         }
     }
 
