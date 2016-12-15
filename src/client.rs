@@ -148,6 +148,26 @@ impl Client {
         }
     }
 
+    /// Download a resource as a CSV file.  This only makes sense for
+    /// certain kinds of resources.
+    pub fn download<R: Resource>(&self, resource: &Id<R>)
+                                 -> Result<reqwest::Response> {
+        let url = self.url(&format!("{}/download", &resource));
+        let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+        let client = reqwest::Client::new()
+            .stringify_error()
+            .chain_err(&mkerr)?;
+        let res = client.get(url.clone())
+            .send()
+            .stringify_error()
+            .chain_err(&mkerr)?;
+        if res.status().is_success() {
+            Ok(res)
+        } else {
+            self.response_to_err(res).chain_err(&mkerr)
+        }
+    }
+
     /// Handle a response from the server, deserializing it as the
     /// appropriate type.
     fn handle_response<T>(&self, mut res: reqwest::Response) -> Result<T>
@@ -160,12 +180,14 @@ impl Client {
             let properties = serde_json::from_str(&body)?;
             Ok(properties)
         } else {
-            let mut body = String::new();
-            res.read_to_string(&mut body)?;
-            debug!("Error body: {}", &body);
-            let err: Error =
-                ErrorKind::UnexpectedHttpStatus(res.status().to_owned(), body).into();
-            Err(err)
+            self.response_to_err(res)
         }
+    }
+
+    fn response_to_err<T>(&self, mut res: reqwest::Response) -> Result<T> {
+        let mut body = String::new();
+        res.read_to_string(&mut body)?;
+        debug!("Error body: {}", &body);
+        Err(ErrorKind::UnexpectedHttpStatus(res.status().to_owned(), body).into())
     }
 }
