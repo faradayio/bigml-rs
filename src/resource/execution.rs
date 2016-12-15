@@ -1,7 +1,10 @@
 //! An execution of a WhizzML script.
 
-use serde::Serialize;
+use serde::{Deserialize, Deserializer, Serialize};
+use serde::de;
 use serde_json;
+use std::error;
+use std::result;
 
 use errors::*;
 use super::id::*;
@@ -30,11 +33,13 @@ resource! {
 /// TODO: Lots of missing fields.
 #[derive(Debug, Deserialize)]
 pub struct Data {
-    // The `outputs` field changes type as the script executes.  Don't
-    // bother messing with it.  Use `result.outputs` when present instead.
+    /// Outputs from this script.
+    #[serde(default)]
+    pub outputs: Vec<Output>,
 
-    /// Result values from the script.
-    pub result: Option<Vec<serde_json::Value>>,
+    /// Result values from the script.  This is literally whatever value is
+    /// returned at the end of the WhizzML script.
+    pub result: serde_json::Value,
 
     /// Having one hidden field makes it possible to extend this struct
     /// without breaking semver API guarantees.
@@ -90,4 +95,123 @@ impl Args {
 
 impl super::Args for Args {
     type Resource = Execution;
+}
+
+/// A named output value from an execution.
+#[derive(Debug)]
+pub struct Output {
+    /// The name of this output.
+    pub name: String,
+
+    /// The value of this output, or `None` if it has not yet been computed.
+    pub value: Option<serde_json::Value>,
+
+    /// The type of this output, or `None` if we don't know the type.
+    pub type_: Option<String>,
+
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    _hidden: (),
+}
+
+impl Output {
+    /// Get this output as the specified type, performing any necessary
+    /// conversions.  Returns an error if this output hasn't been computed
+    /// yet.
+    pub fn get<D: Deserialize>(&self) -> Result<D> {
+        let mkerr = || ErrorKind::CouldNotGetOutput(self.name.clone());
+        if let Some(ref value) = self.value {
+            // We need to be explicit about the error type we want
+            // `from_value` to return here.
+            let result: result::Result<D, serde_json::error::Error> =
+                serde_json::value::from_value(value.to_owned());
+            result.chain_err(&mkerr)
+        } else {
+            let err: Error = ErrorKind::OutputNotAvailable.into();
+            Err(err).chain_err(&mkerr)
+        }
+    }
+}
+
+impl Deserialize for Output {
+    fn deserialize<D>(deserializer: &mut D) -> result::Result<Self, D::Error>
+        where D: Deserializer,
+    {
+        struct OutputVisitor;
+
+        // Do a whole bunch of annoying work to deal with all the different
+        // formats this might have.
+        impl de::Visitor for OutputVisitor {
+            type Value = Output;
+
+            fn visit_str<E>(&mut self, v: &str)
+                            -> result::Result<Self::Value, E>
+                where E: error::Error
+            {
+                Ok(Output {
+                    name: v.to_owned(),
+                    value: None,
+                    type_: None,
+                    _hidden: (),
+                })
+            }
+
+            fn visit_seq<V>(&mut self, mut visitor: V)
+                            -> result::Result<Self::Value, V::Error>
+                where V: de::SeqVisitor
+            {
+                use serde::Error;
+
+                let name = visitor.visit()?
+                    .ok_or_else(|| V::Error::custom("no name field in output"))?;
+                let value = visitor.visit()?
+                    .ok_or_else(|| V::Error::custom("no value field in output"))?;
+                let type_ = visitor.visit()?
+                    .ok_or_else(|| V::Error::custom("no type field in output"))?;
+                visitor.end()?;
+
+                Ok(Output {
+                    name: name,
+                    value: Some(value),
+                    type_: if type_ == "" { None } else { Some(type_) },
+                    _hidden: (),
+                })
+            }
+        }
+
+        deserializer.deserialize_i32(OutputVisitor)
+    }
+}
+
+#[test]
+fn deserialize_output_with_only_a_name() {
+    let json = r#""name""#;
+    let output: Output = serde_json::from_str(&json).unwrap();
+    assert_eq!(output.name, "name");
+    assert!(output.value.is_none());
+    assert!(output.get::<bool>().is_err());
+    assert!(output.type_.is_none());
+}
+
+#[test]
+fn deserialize_output_with_name_and_value_but_no_type() {
+    let json = r#"["name", null, ""]"#;
+    let output: Output = serde_json::from_str(&json).unwrap();
+    assert_eq!(output.name, "name");
+    assert_eq!(output.get::<Option<bool>>().unwrap(), None);
+    assert!(output.type_.is_none());
+}
+
+#[test]
+fn deserialize_output_with_everything() {
+    use resource::evaluation::{ClassificationResult, Evaluation};
+
+    let json =
+        r#"["evaluation", "evaluation/50650d563c19202679000000", "evaluation"]"#;
+    let output: Output = serde_json::from_str(&json).unwrap();
+
+    assert_eq!(output.name, "evaluation");
+    let value: Id<Evaluation<ClassificationResult>> = output.get().unwrap();
+    assert_eq!(value.as_str(), "evaluation/50650d563c19202679000000");
+    assert_eq!(output.type_.unwrap(), "evaluation");
 }

@@ -23,10 +23,22 @@ error_chain! {
             display("could not access '{}'", &url)
         }
 
+        /// We could not get an output value from a WhizzML script.
+        CouldNotGetOutput(name: String) {
+            description("could not get WhizzML output")
+            display("could not get WhizzML output '{}'", &name)
+        }
+
         /// We failed to read the specified file.
         CouldNotReadFile(path: PathBuf) {
             description("could not read file")
             display("could not read file '{}'", &path.display())
+        }
+
+        /// We could not access an output value of a WhizzML script.
+        OutputNotAvailable {
+            description("WhizzML output is not (yet?) available")
+            display("WhizzML output is not (yet?) available")
         }
 
         /// We received an unexpected HTTP status code.
