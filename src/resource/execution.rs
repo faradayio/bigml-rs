@@ -39,7 +39,7 @@ pub struct Data {
 
     /// Result values from the script.  This is literally whatever value is
     /// returned at the end of the WhizzML script.
-    pub result: serde_json::Value,
+    pub result: Option<serde_json::Value>,
 
     /// Having one hidden field makes it possible to extend this struct
     /// without breaking semver API guarantees.
