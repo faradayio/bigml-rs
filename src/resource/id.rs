@@ -3,6 +3,7 @@
 #[cfg(feature="postgres")]
 use postgres as pg;
 use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+#[cfg(feature="postgres")]
 use std::error;
 use std::fmt;
 use std::marker::PhantomData;
