@@ -162,6 +162,7 @@ impl Client {
             .stringify_error()
             .chain_err(&mkerr)?;
         if res.status().is_success() {
+            debug!("Downloading {}", &resource);
             Ok(res)
         } else {
             self.response_to_err(res).chain_err(&mkerr)
@@ -180,6 +181,7 @@ impl Client {
             .stringify_error()
             .chain_err(&mkerr)?;
         if res.status().is_success() {
+            debug!("Deleted {}", &resource);
             Ok(())
         } else {
             self.response_to_err(res).chain_err(&mkerr)
