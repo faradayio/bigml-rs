@@ -10,7 +10,7 @@ resource! {
     /// A WhizzML script on BigML.
     ///
     /// TODO: Still lots of missing fields.
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Deserialize, Clone)]
     pub struct Script {
         /// The status of this resource.
         pub status: GenericStatus,

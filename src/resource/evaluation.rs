@@ -13,7 +13,7 @@ resource! {
     /// An evaluation of how well a model (or ensemble) predicts the data.
     ///
     /// TODO: Still lots of missing fields.
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Deserialize, Clone)]
     pub struct Evaluation<R: Result> {
         /// The status of this resource.
         pub status: GenericStatus,

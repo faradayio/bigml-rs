@@ -87,7 +87,7 @@ pub trait Status {
 }
 
 /// Status of a generic resource.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct GenericStatus {
     /// Status code.
     pub code: StatusCode,

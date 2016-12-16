@@ -10,7 +10,7 @@ resource! {
     /// A data source used by BigML.
     ///
     /// TODO: Still lots of missing fields.
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Deserialize, Clone)]
     pub struct Source {
         /// The status of this source.
         pub status: GenericStatus,

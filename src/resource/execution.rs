@@ -18,7 +18,7 @@ resource! {
     /// An execution of a WhizzML script.
     ///
     /// TODO: Still lots of missing fields.
-    #[derive(Debug, Deserialize)]
+    #[derive(Debug, Deserialize, Clone)]
     pub struct Execution {
         /// The current status of this execution.
         pub status: GenericStatus,
@@ -31,7 +31,7 @@ resource! {
 /// Data about a script execution.
 ///
 /// TODO: Lots of missing fields.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Data {
     /// Outputs from this script.
     #[serde(default)]
@@ -110,7 +110,7 @@ impl super::Args for Args {
 }
 
 /// A named output value from an execution.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Output {
     /// The name of this output.
     pub name: String,
