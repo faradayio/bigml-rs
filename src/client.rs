@@ -168,6 +168,24 @@ impl Client {
         }
     }
 
+    /// Delete the specified resource.
+    pub fn delete<R: Resource>(&self, resource: &Id<R>) -> Result<()> {
+        let url = self.url(resource.as_str());
+        let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+        let client = reqwest::Client::new()
+            .stringify_error()
+            .chain_err(&mkerr)?;
+        let res = client.request(reqwest::Method::Delete, url.clone())
+            .send()
+            .stringify_error()
+            .chain_err(&mkerr)?;
+        if res.status().is_success() {
+            Ok(())
+        } else {
+            self.response_to_err(res).chain_err(&mkerr)
+        }
+    }
+
     /// Handle a response from the server, deserializing it as the
     /// appropriate type.
     fn handle_response<T>(&self, mut res: reqwest::Response) -> Result<T>
