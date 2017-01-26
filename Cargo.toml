@@ -22,7 +22,7 @@ lazy_static = "0.2.2"
 log = "0.3.6"
 mime = "0.2.2"
 postgres = { version = "0.13.3", optional = true }
-reqwest = "0.1.0"
+reqwest = { version = "0.3.0", path = "reqwest" }
 serde = "0.8.19"
 serde_derive = "0.8.19"
 serde_json = "0.8.3"

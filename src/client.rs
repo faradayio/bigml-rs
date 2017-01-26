@@ -82,18 +82,7 @@ impl Client {
         where P: AsRef<Path>
     {
         let path = path.as_ref();
-        let mut body = multipart_form_data::Body::new("file", path)
-            .chain_err(|| ErrorKind::CouldNotReadFile(path.to_owned()))?;
-
-        // TODO: File upstream. Work around the facts that:
-        //
-        // 1. `reqwest` can't take a `Read` impl and a size as imput, and so
-        //    it falls back to `chunked` mode if given a reader, and
-        // 2. BigML can't handle chunked transfer encoding,
-        //
-        // ...by reading everything into memory.
-        let mut body_data = vec![];
-        body.read_to_end(&mut body_data)
+        let body = multipart_form_data::Body::new("file", path)
             .chain_err(|| ErrorKind::CouldNotReadFile(path.to_owned()))?;
 
         // Post our request.
@@ -104,7 +93,7 @@ impl Client {
             .chain_err(&mkerr)?;
         let res = client.post(url.clone())
             .header(reqwest::header::ContentType(body.mime_type()))
-            .body(body_data)
+            .body(body)
             .send()
             .stringify_error()
             .chain_err(&mkerr)?;

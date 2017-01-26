@@ -1,6 +1,7 @@
 //! Support for sending multipart form data with a file attachment.
 
 use mime;
+use reqwest;
 use std::fs;
 use std::io::{self, Read};
 use std::path::PathBuf;
@@ -13,7 +14,8 @@ use errors::*;
 /// by then.
 pub struct Body {
     boundary: String,
-    reader: Box<Read>,
+    size: u64,
+    reader: Box<Read+Send>,
 }
 
 impl Body {
@@ -29,6 +31,7 @@ impl Body {
         // Open up our file.
         let file = fs::File::open(&path)
             .chain_err(|| ErrorKind::CouldNotReadFile(path.clone()))?;
+        let file_size = file.metadata()?.len();
 
         // Create a streaming, multi-part encoder.  Don't even think of
         // reading all the data into memory; there may be 10s of gigabytes
@@ -44,12 +47,14 @@ Content-Type: application/octet-stream\r
         let footer = format!("\r
 --{}--\r
 ", &boundary);
+        let size = header.len() as u64 + file_size + footer.len() as u64;
         let body = io::Cursor::new(header)
             .chain(file)
             .chain(io::Cursor::new(footer));
         Ok(Body {
             boundary: boundary,
-            reader: Box::new(body)
+            size: size,
+            reader: Box::new(body),
         })
     }
 
@@ -65,5 +70,12 @@ Content-Type: application/octet-stream\r
 impl Read for Body {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.reader.read(buf)
+    }
+}
+
+impl From<Body> for reqwest::Body {
+    fn from(body: Body) -> reqwest::Body {
+        let size = body.size;
+        reqwest::Body::sized(body, size)
     }
 }
