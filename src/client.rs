@@ -3,6 +3,7 @@
 use reqwest;
 use serde::Deserialize;
 use serde_json;
+use std::collections::HashMap;
 use std::io::Read;
 use std::path::Path;
 use std::thread::sleep;
@@ -11,7 +12,7 @@ use url::Url;
 
 use errors::*;
 use multipart_form_data;
-use resource::{self, Id, Resource, Source};
+use resource::{self, Id, Resource, Source, source};
 use util::StringifyError;
 
 lazy_static! {
@@ -94,6 +95,33 @@ impl Client {
         let res = client.post(url.clone())
             .header(reqwest::header::ContentType(body.mime_type()))
             .body(body)
+            .send()
+            .stringify_error()
+            .chain_err(&mkerr)?;
+        self.handle_response(res).chain_err(&mkerr)
+    }
+
+    /// When a `source` is initially created, a few of the field types may
+    /// have been guessed incorrectly, which means that we need to update
+    /// them (which is rare in the BigML API).  To update the field types,
+    /// update them in the `source` object and then pass it to this
+    /// function.
+    ///
+    /// TODO: This might be replaced by a far more general update
+    /// mechanism, but that would require a more complex implementation.
+    pub fn update_source_fields(&self, source: &Source) -> Result<()> {
+        #[derive(Serialize)]
+        struct SourceUpdate<'a> {
+            fields: &'a HashMap<String, source::Field>,
+        }
+
+        let url = self.url(source.id().as_str());
+        let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+        let client = reqwest::Client::new()
+            .stringify_error()
+            .chain_err(&mkerr)?;
+        let res = client.post(url.clone())
+            .json(&SourceUpdate { fields: &source.fields })
             .send()
             .stringify_error()
             .chain_err(&mkerr)?;
