@@ -118,9 +118,11 @@ impl Client {
     /// update them in the `source` object and then pass it to this
     /// function.
     ///
-    /// TODO: This might be replaced by a far more general update
-    /// mechanism, but that would require a more complex implementation.
-    pub fn update_source_fields(&self, source: &Source) -> Result<()> {
+    /// TODO: This is a terrible API and it will go away sometime soon.  We
+    /// need a much more general solution for this, or perhaps a nice,
+    /// special-purpose API with good ergonomics.
+    #[doc(hidden)]
+    pub fn update_source_fields(&self, source: &Source) -> Result<Source> {
         if let Some(ref fields) = source.fields {
             #[derive(Debug, Serialize)]
             struct FieldDiff {
