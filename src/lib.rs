@@ -1,8 +1,5 @@
 //! A Rust client for BigML's REST API.
 
-// Needed for serde_derive until Macros 1.1 stablizes (in Rust 1.15?).
-#![feature(proc_macro)]
-
 // Needed for error-chain.
 #![recursion_limit = "1024"]
 
