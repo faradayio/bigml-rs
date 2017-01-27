@@ -5,6 +5,7 @@ use serde::Deserialize;
 use serde_json;
 use std::collections::HashMap;
 use std::io::Read;
+use std::iter::FromIterator;
 use std::path::Path;
 use std::thread::sleep;
 use std::time::Duration;
@@ -101,6 +102,16 @@ impl Client {
         self.handle_response(res).chain_err(&mkerr)
     }
 
+    /// Create a BigML data source using data from the specified path.  We
+    /// stream the data over the network without trying to load it all into
+    /// memory.
+    pub fn create_source_from_path_and_wait<P>(&self, path: P) -> Result<Source>
+        where P: AsRef<Path>
+    {
+        let source = self.create_source_from_path(path)?;
+        self.wait(source.id())
+    }
+
     /// When a `source` is initially created, a few of the field types may
     /// have been guessed incorrectly, which means that we need to update
     /// them (which is rare in the BigML API).  To update the field types,
@@ -110,22 +121,38 @@ impl Client {
     /// TODO: This might be replaced by a far more general update
     /// mechanism, but that would require a more complex implementation.
     pub fn update_source_fields(&self, source: &Source) -> Result<()> {
-        #[derive(Serialize)]
-        struct SourceUpdate<'a> {
-            fields: &'a HashMap<String, source::Field>,
-        }
+        if let Some(ref fields) = source.fields {
+            #[derive(Debug, Serialize)]
+            struct FieldDiff {
+                optype: source::Optype,
+            }
 
-        let url = self.url(source.id().as_str());
-        let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
-        let client = reqwest::Client::new()
-            .stringify_error()
-            .chain_err(&mkerr)?;
-        let res = client.post(url.clone())
-            .json(&SourceUpdate { fields: &source.fields })
-            .send()
-            .stringify_error()
-            .chain_err(&mkerr)?;
-        self.handle_response(res).chain_err(&mkerr)
+            #[derive(Debug, Serialize)]
+            struct SourceUpdate {
+                fields: HashMap<String, FieldDiff>,
+            }
+
+            let body = SourceUpdate {
+                fields: HashMap::from_iter(fields.iter().map(|(id, field)| {
+                    (id.clone(), FieldDiff { optype: field.optype })
+                }))
+            };
+
+            let url = self.url(source.id().as_str());
+            let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+            debug!("PUT {}: {:?}", &url, &body);
+            let client = reqwest::Client::new()
+                .stringify_error()
+                .chain_err(&mkerr)?;
+            let res = client.request(reqwest::Method::Put, url.clone())
+                .json(&body)
+                .send()
+                .stringify_error()
+                .chain_err(&mkerr)?;
+            self.handle_response(res).chain_err(&mkerr)
+        } else {
+            Err(format!("No fields to update in {}", source.id()).into())
+        }
     }
 
     /// Fetch an existing resource.

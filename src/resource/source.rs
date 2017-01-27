@@ -27,7 +27,7 @@ resource! {
         pub size: u64,
 
         /// The fields in this source, keyed by BigML internal ID.
-        pub fields: HashMap<String, Field>,
+        pub fields: Option<HashMap<String, Field>>,
     }
 }
 
@@ -38,10 +38,10 @@ pub struct Field {
     pub name: String,
     /// The type of data stored in this field.
     pub optype: Optype,
-    /// The locale of this field.
-    pub locale: String,
-    /// (This is not well-documented in the BigML API.)
-    pub missing_tokens: Vec<String>,
+    // The locale of this field.
+    //pub locale: Option<String>,
+    // (This is not well-documented in the BigML API.)
+    //pub missing_tokens: Option<Vec<String>>,
 }
 
 /// The type of a data field.
