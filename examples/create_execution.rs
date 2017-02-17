@@ -3,7 +3,7 @@ extern crate env_logger;
 #[macro_use]
 extern crate log;
 
-use bigml::{ChainErr, Result};
+use bigml::{Result, ResultExt};
 use bigml::resource;
 use std::env;
 use std::io::{self, Write};

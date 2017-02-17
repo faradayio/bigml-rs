@@ -12,8 +12,8 @@ use url::Url;
 
 error_chain! {
     foreign_links {
-        io::Error, Io;
-        serde_json::Error, Json;
+        Io(io::Error);
+        Json(serde_json::Error);
     }
 
     errors {
