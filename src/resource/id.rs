@@ -3,6 +3,7 @@
 #[cfg(feature="postgres")]
 use postgres as pg;
 use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+use serde::de::Unexpected;
 #[cfg(feature="postgres")]
 use std::error;
 use std::fmt;
@@ -60,7 +61,7 @@ impl<R: Resource> fmt::Display for Id<R> {
 }
 
 impl<R: Resource> Deserialize for Id<R> {
-    fn deserialize<D>(deserializer: &mut D) -> result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
         where D: Deserializer
     {
         let id: String = String::deserialize(deserializer)?;
@@ -70,15 +71,17 @@ impl<R: Resource> Deserialize for Id<R> {
                 _phantom: PhantomData,
             })
         } else {
-            let err: Error =
-                ErrorKind::WrongResourceType(R::id_prefix(), id).into();
-            Err(<D::Error as serde::Error>::invalid_value(&format!("{}", err)))
+            let unexpected = Unexpected::Str(&id);
+            let expected = format!("a BigML resource ID starting with '{}'",
+                                   R::id_prefix());
+            Err(<D::Error as serde::de::Error>::invalid_value(unexpected,
+                                                              &&expected[..]))
         }
     }
 }
 
 impl<R: Resource> Serialize for Id<R> {
-    fn serialize<S>(&self, serializer: &mut S) -> result::Result<(), S::Error>
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
         where S: Serializer
     {
         self.id.serialize(serializer)

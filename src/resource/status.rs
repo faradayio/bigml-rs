@@ -1,6 +1,7 @@
 //! Types represesting the status of a BigML resource.
 
 use serde::{self, Deserialize, Deserializer};
+use serde::de::Unexpected;
 use std::result;
 
 /// A BigML status code.
@@ -47,7 +48,7 @@ impl StatusCode {
 }
 
 impl Deserialize for StatusCode {
-    fn deserialize<D>(deserializer: &mut D) -> result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
         where D: Deserializer
     {
         match i64::deserialize(deserializer)? {
@@ -60,8 +61,10 @@ impl Deserialize for StatusCode {
             -1 => Ok(StatusCode::Faulty),
             -2 => Ok(StatusCode::Unknown),
             code => {
-                let msg = format!("Unknown BigML resource status code {}", code);
-                Err(<D::Error as serde::Error>::invalid_value(&msg))
+                let unexpected = Unexpected::Signed(code);
+                let expected = "a number between -2 and 5";
+                Err(<D::Error as serde::de::Error>::invalid_value(unexpected,
+                                                                  &expected))
             }
         }
     }

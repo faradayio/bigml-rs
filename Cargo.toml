@@ -13,16 +13,16 @@ documentation = "https://docs.rs/bigml/"
 postgresql = ["postgres"]
 
 [dev-dependencies]
-env_logger = "0.3.5"
+env_logger = "0.4"
 
 [dependencies]
-chrono = { version = "0.2.25", features = ["serde"] }
+chrono = { version = "0.3", features = ["serde"] }
 error-chain = "0.5.0"
 lazy_static = "0.2.2"
 log = "0.3.6"
 mime = "0.2.2"
 postgres = { version = "0.13.3", optional = true }
-reqwest = { version = "0.3.0", git = "https://github.com/faradayio/reqwest", branch = "sized_body" }
+reqwest = { version = "0.4.0", git = "https://github.com/faradayio/reqwest", branch = "sized_body" }
 serde = "0.9"
 serde_derive = "0.9"
 serde_json = "0.9"

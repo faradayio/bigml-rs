@@ -4,6 +4,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde::de;
 use serde_json;
 use std::error;
+use std::fmt;
 use std::result;
 
 use errors::*;
@@ -91,9 +92,8 @@ impl Args {
     pub fn add_input<S, V>(&mut self, name: S, value: V) -> Result<()>
         where S: Into<String>, V: Serialize
     {
-        let mut ser = serde_json::value::Serializer::new();
-        value.serialize(&mut ser)?;
-        self.inputs.push((name.into(), ser.unwrap()));
+        let val = serde_json::value::to_value(value)?;
+        self.inputs.push((name.into(), val));
         Ok(())
     }
 
@@ -146,7 +146,7 @@ impl Output {
 }
 
 impl Deserialize for Output {
-    fn deserialize<D>(deserializer: &mut D) -> result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
         where D: Deserializer,
     {
         struct OutputVisitor;
@@ -156,7 +156,11 @@ impl Deserialize for Output {
         impl de::Visitor for OutputVisitor {
             type Value = Output;
 
-            fn visit_str<E>(&mut self, v: &str)
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "either a string or an array of three strings")
+            }
+
+            fn visit_str<E>(self, v: &str)
                             -> result::Result<Self::Value, E>
                 where E: error::Error
             {
@@ -168,11 +172,11 @@ impl Deserialize for Output {
                 })
             }
 
-            fn visit_seq<V>(&mut self, mut visitor: V)
+            fn visit_seq<V>(self, mut visitor: V)
                             -> result::Result<Self::Value, V::Error>
                 where V: de::SeqVisitor
             {
-                use serde::Error;
+                use serde::de::Error;
 
                 let name = visitor.visit()?
                     .ok_or_else(|| V::Error::custom("no name field in output"))?;
@@ -180,7 +184,6 @@ impl Deserialize for Output {
                     .ok_or_else(|| V::Error::custom("no value field in output"))?;
                 let type_ = visitor.visit()?
                     .ok_or_else(|| V::Error::custom("no type field in output"))?;
-                visitor.end()?;
 
                 Ok(Output {
                     name: name,
