@@ -1,6 +1,7 @@
 //! An evaluation of how well a model (or ensemble) predicts the data.
 
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::fmt;
 
 use super::Resource;
@@ -14,6 +15,7 @@ resource! {
     ///
     /// TODO: Still lots of missing fields.
     #[derive(Debug, Deserialize, Clone)]
+    #[serde(bound(deserialize = ""))]
     pub struct Evaluation<R: Result> {
         /// The status of this resource.
         pub status: GenericStatus,
@@ -27,7 +29,7 @@ resource! {
 ///
 /// TODO: I'm not sure we want to shadow `Result`.  But this name will
 /// basically always be qualified, so maybe it's OK.
-pub trait Result: fmt::Debug + Deserialize + Serialize + Sized {
+pub trait Result: fmt::Debug + DeserializeOwned + Serialize + Sized {
 }
 
 /// The result of evaluating a classifier.

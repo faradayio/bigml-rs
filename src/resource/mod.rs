@@ -1,6 +1,7 @@
 //! Resource types manipulated by the BigML API.
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::fmt;
 
 // We re-export everything from our support submodules.
@@ -17,7 +18,7 @@ pub use self::script::Script;
 pub use self::source::Source;
 
 /// A shared interface to all BigML resource types.
-pub trait Resource: fmt::Debug + Deserialize {
+pub trait Resource: fmt::Debug + DeserializeOwned {
     /// The prefix used for all IDs of this type.
     fn id_prefix() -> &'static str;
 

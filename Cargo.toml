@@ -9,22 +9,18 @@ readme = "README.md"
 repository = "https://github.com/faradayio/bigml-rs"
 documentation = "https://docs.rs/bigml/"
 
-[features]
-postgresql = ["postgres"]
-
 [dev-dependencies]
 env_logger = "0.4"
 
 [dependencies]
-chrono = { version = "0.3", features = ["serde"] }
-error-chain = "0.9"
+chrono = { version = "0.4", features = ["serde"] }
+error-chain = "0.10"
 lazy_static = "0.2.2"
 log = "0.3.6"
-mime = "0.2.2"
-postgres = { version = "0.13.3", optional = true }
-reqwest = { version = "0.4.0", git = "https://github.com/faradayio/reqwest", branch = "sized_body" }
-serde = "0.9"
-serde_derive = "0.9"
-serde_json = "0.9"
+mime = "0.3"
+reqwest = "0.7"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
 url = "1.2.3"
-uuid = { version = ">=0.2.0, <0.5.0", features = ["v4"] }
+uuid = { version = "0.5.0", features = ["v4"] }

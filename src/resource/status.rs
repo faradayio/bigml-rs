@@ -47,9 +47,9 @@ impl StatusCode {
     }
 }
 
-impl Deserialize for StatusCode {
+impl<'de> Deserialize<'de> for StatusCode {
     fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
-        where D: Deserializer
+        where D: Deserializer<'de>
     {
         match i64::deserialize(deserializer)? {
             0 => Ok(StatusCode::Waiting),

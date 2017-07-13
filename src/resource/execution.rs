@@ -1,6 +1,7 @@
 //! An execution of a WhizzML script.
 
 use serde::{Deserialize, Deserializer, Serialize};
+use serde::de::DeserializeOwned;
 use serde::de;
 use serde_json;
 use std::error;
@@ -50,7 +51,7 @@ pub struct Data {
 
 impl Data {
     /// Get a named output of this execution.
-    pub fn get<D: Deserialize>(&self, name: &str) -> Result<D> {
+    pub fn get<D: DeserializeOwned>(&self, name: &str) -> Result<D> {
         for output in &self.outputs {
             if output.name == name {
                 return output.get();
@@ -130,7 +131,7 @@ impl Output {
     /// Get this output as the specified type, performing any necessary
     /// conversions.  Returns an error if this output hasn't been computed
     /// yet.
-    pub fn get<D: Deserialize>(&self) -> Result<D> {
+    pub fn get<D: DeserializeOwned>(&self) -> Result<D> {
         let mkerr = || ErrorKind::CouldNotGetOutput(self.name.clone());
         if let Some(ref value) = self.value {
             // We need to be explicit about the error type we want
@@ -145,15 +146,15 @@ impl Output {
     }
 }
 
-impl Deserialize for Output {
+impl<'de> Deserialize<'de> for Output {
     fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
-        where D: Deserializer,
+        where D: Deserializer<'de>,
     {
         struct OutputVisitor;
 
         // Do a whole bunch of annoying work to deal with all the different
         // formats this might have.
-        impl de::Visitor for OutputVisitor {
+        impl<'de> de::Visitor<'de> for OutputVisitor {
             type Value = Output;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -174,15 +175,15 @@ impl Deserialize for Output {
 
             fn visit_seq<V>(self, mut visitor: V)
                             -> result::Result<Self::Value, V::Error>
-                where V: de::SeqVisitor
+                where V: de::SeqAccess<'de>
             {
                 use serde::de::Error;
 
-                let name = visitor.visit()?
+                let name = visitor.next_element()?
                     .ok_or_else(|| V::Error::custom("no name field in output"))?;
-                let value = visitor.visit()?
+                let value = visitor.next_element()?
                     .ok_or_else(|| V::Error::custom("no value field in output"))?;
-                let type_ = visitor.visit()?
+                let type_ = visitor.next_element()?
                     .ok_or_else(|| V::Error::custom("no type field in output"))?;
 
                 Ok(Output {

@@ -60,10 +60,9 @@ Content-Type: application/octet-stream\r
 
     /// The MIME type for this body, including the `boundary` value.
     pub fn mime_type(&self) -> mime::Mime {
-        mime::Mime(mime::TopLevel::Multipart,
-                   mime::SubLevel::FormData,
-                   vec![(mime::Attr::Boundary,
-                         mime::Value::Ext(self.boundary.to_owned()))])
+        format!("multipart/form-data; boundary={}", self.boundary)
+            .parse()
+            .expect("Could not parse built-in MIME type")
     }
 }
 

@@ -13,9 +13,6 @@ extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate mime;
-#[cfg(feature="postgres")]
-#[macro_use]
-extern crate postgres;
 extern crate reqwest;
 extern crate serde;
 #[macro_use]
@@ -31,7 +28,6 @@ mod client;
 mod errors;
 mod multipart_form_data;
 pub mod resource;
-mod util;
 
 #[cfg(test)]
 mod tests {

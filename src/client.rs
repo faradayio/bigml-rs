@@ -1,7 +1,7 @@
 //! A client connection to BigML.
 
 use reqwest;
-use serde::Deserialize;
+use serde::de::DeserializeOwned;
 use serde_json;
 use std::collections::HashMap;
 use std::io::Read;
@@ -14,7 +14,6 @@ use url::Url;
 use errors::*;
 use multipart_form_data;
 use resource::{self, Id, Resource, Source, source};
-use util::StringifyError;
 
 lazy_static! {
     /// The URL of the BigML API.
@@ -60,12 +59,12 @@ impl Client {
         debug!("POST {} {:#?}", Args::Resource::create_path(), &serde_json::to_string(args));
         let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
         let client = reqwest::Client::new()
-            .stringify_error()
             .chain_err(&mkerr)?;
         let res = client.post(url.clone())
+            .chain_err(&mkerr)?
             .json(args)
+            .chain_err(&mkerr)?
             .send()
-            .stringify_error()
             .chain_err(&mkerr)?;
         self.handle_response(res).chain_err(&mkerr)
     }
@@ -91,13 +90,12 @@ impl Client {
         let url = self.url("/source");
         let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
         let client = reqwest::Client::new()
-            .stringify_error()
             .chain_err(&mkerr)?;
         let res = client.post(url.clone())
+            .chain_err(&mkerr)?
             .header(reqwest::header::ContentType(body.mime_type()))
             .body(body)
             .send()
-            .stringify_error()
             .chain_err(&mkerr)?;
         self.handle_response(res).chain_err(&mkerr)
     }
@@ -144,12 +142,12 @@ impl Client {
             let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
             debug!("PUT {}: {:?}", &url, &body);
             let client = reqwest::Client::new()
-                .stringify_error()
                 .chain_err(&mkerr)?;
             let res = client.request(reqwest::Method::Put, url.clone())
+                .chain_err(&mkerr)?
                 .json(&body)
+                .chain_err(&mkerr)?
                 .send()
-                .stringify_error()
                 .chain_err(&mkerr)?;
             self.handle_response(res).chain_err(&mkerr)
         } else {
@@ -162,11 +160,10 @@ impl Client {
         let url = self.url(resource.as_str());
         let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
         let client = reqwest::Client::new()
-            .stringify_error()
             .chain_err(&mkerr)?;
         let res = client.get(url.clone())
+            .chain_err(&mkerr)?
             .send()
-            .stringify_error()
             .chain_err(&mkerr)?;
         self.handle_response(res).chain_err(&mkerr)
     }
@@ -201,11 +198,10 @@ impl Client {
         let url = self.url(&format!("{}/download", &resource));
         let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
         let client = reqwest::Client::new()
-            .stringify_error()
             .chain_err(&mkerr)?;
         let res = client.get(url.clone())
+            .chain_err(&mkerr)?
             .send()
-            .stringify_error()
             .chain_err(&mkerr)?;
         if res.status().is_success() {
             debug!("Downloading {}", &resource);
@@ -220,11 +216,10 @@ impl Client {
         let url = self.url(resource.as_str());
         let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
         let client = reqwest::Client::new()
-            .stringify_error()
             .chain_err(&mkerr)?;
         let res = client.request(reqwest::Method::Delete, url.clone())
+            .chain_err(&mkerr)?
             .send()
-            .stringify_error()
             .chain_err(&mkerr)?;
         if res.status().is_success() {
             debug!("Deleted {}", &resource);
@@ -237,7 +232,7 @@ impl Client {
     /// Handle a response from the server, deserializing it as the
     /// appropriate type.
     fn handle_response<T>(&self, mut res: reqwest::Response) -> Result<T>
-        where T: Deserialize
+        where T: DeserializeOwned
     {
         if res.status().is_success() {
             let mut body = String::new();
