@@ -11,6 +11,8 @@ pub use self::status::*;
 // We only re-export the main names from our resource submodules.  For any
 // other types, use a fully-qualified name.
 pub use self::batchprediction::BatchPrediction;
+pub use self::batchcentroid::BatchCentroid;
+pub use self::cluster::Cluster;
 pub use self::ensemble::Ensemble;
 pub use self::evaluation::Evaluation;
 pub use self::execution::Execution;
@@ -152,7 +154,9 @@ mod status;
 
 // Individual resource types.  These need to go after our `response!` macro
 // definition, above, because macros are processed as source is being read.
+pub mod batchcentroid;
 pub mod batchprediction;
+pub mod cluster;
 pub mod ensemble;
 pub mod evaluation;
 pub mod execution;
