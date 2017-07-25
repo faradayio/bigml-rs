@@ -10,8 +10,8 @@ pub use self::status::*;
 
 // We only re-export the main names from our resource submodules.  For any
 // other types, use a fully-qualified name.
-pub use self::batchprediction::BatchPrediction;
 pub use self::batchcentroid::BatchCentroid;
+pub use self::batchprediction::BatchPrediction;
 pub use self::cluster::Cluster;
 pub use self::ensemble::Ensemble;
 pub use self::evaluation::Evaluation;
