@@ -15,6 +15,8 @@ resource! {
         /// The current status of this cluster.
         pub status: GenericStatus,
 
+        pub clusters: # FIXME this is just a json blob, we'll examine later
+
         // The dataset used to create this cluster.
         //pub dataset: Id<Dataset>,
     }
