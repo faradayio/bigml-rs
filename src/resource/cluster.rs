@@ -18,6 +18,8 @@ resource! {
         pub status: GenericStatus,
 
         /// Details about the clusters that BigML found.
+        ///
+        /// TODO: Convert to a strongly-typed struct.
         pub clusters: Option<serde_json::Value>,
 
         // The dataset used to create this cluster.
