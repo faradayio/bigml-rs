@@ -39,7 +39,7 @@ resource! {
 #[derive(Clone, Debug, Deserialize)]
 pub struct EnsembleInfo {
     /// Information about this ensemble's fields. Keyed by BigML field ID.
-    fields: HashMap<String, EnsembleField>,
+    pub fields: HashMap<String, EnsembleField>,
 
     /// Having one hidden field makes it possible to extend this struct
     /// without breaking semver API guarantees.
