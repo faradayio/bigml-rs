@@ -13,7 +13,7 @@ pub use self::status::*;
 pub use self::batchcentroid::BatchCentroid;
 pub use self::batchprediction::BatchPrediction;
 pub use self::cluster::Cluster;
-pub use self::ensemble::Ensemble;
+pub use self::ensemble::{Ensemble, EnsembleField};
 pub use self::evaluation::Evaluation;
 pub use self::execution::Execution;
 pub use self::script::Script;
