@@ -57,7 +57,7 @@ impl Client {
     {
         let url = self.url(Args::Resource::create_path());
         debug!("POST {} {:#?}", Args::Resource::create_path(), &serde_json::to_string(args));
-        let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+        let mkerr = || ErrorKind::could_not_access_url(url.clone());
         let client = reqwest::Client::new()
             .chain_err(&mkerr)?;
         let res = client.post(url.clone())
@@ -88,7 +88,7 @@ impl Client {
 
         // Post our request.
         let url = self.url("/source");
-        let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+        let mkerr = || ErrorKind::could_not_access_url(url.clone());
         let client = reqwest::Client::new()
             .chain_err(&mkerr)?;
         let res = client.post(url.clone())
@@ -139,7 +139,7 @@ impl Client {
             };
 
             let url = self.url(source.id().as_str());
-            let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+            let mkerr = || ErrorKind::could_not_access_url(url.clone());
             debug!("PUT {}: {:?}", &url, &body);
             let client = reqwest::Client::new()
                 .chain_err(&mkerr)?;
@@ -162,7 +162,7 @@ impl Client {
     /// Fetch an existing resource.
     pub fn fetch<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
         let url = self.url(resource.as_str());
-        let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+        let mkerr = || ErrorKind::could_not_access_url(url.clone());
         let client = reqwest::Client::new()
             .chain_err(&mkerr)?;
         let res = client.get(url.clone())
@@ -185,7 +185,7 @@ impl Client {
                 let err: Error = res.status().message().into();
                 let url = self.url(resource.as_str());
                 return Err(err)
-                    .chain_err(|| ErrorKind::CouldNotAccessUrl(url.clone()));
+                    .chain_err(|| ErrorKind::could_not_access_url(url.clone()));
             }
 
             // If we're not ready, then sleep 10 seconds.  Anything less
@@ -200,7 +200,7 @@ impl Client {
     pub fn download<R: Resource>(&self, resource: &Id<R>)
                                  -> Result<reqwest::Response> {
         let url = self.url(&format!("{}/download", &resource));
-        let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+        let mkerr = || ErrorKind::could_not_access_url(url.clone());
         let client = reqwest::Client::new()
             .chain_err(&mkerr)?;
         let res = client.get(url.clone())
@@ -218,7 +218,7 @@ impl Client {
     /// Delete the specified resource.
     pub fn delete<R: Resource>(&self, resource: &Id<R>) -> Result<()> {
         let url = self.url(resource.as_str());
-        let mkerr = || ErrorKind::CouldNotAccessUrl(url.clone());
+        let mkerr = || ErrorKind::could_not_access_url(url.clone());
         let client = reqwest::Client::new()
             .chain_err(&mkerr)?;
         let res = client.request(reqwest::Method::Delete, url.clone())
