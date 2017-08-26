@@ -120,7 +120,7 @@ impl Client {
     /// need a much more general solution for this, or perhaps a nice,
     /// special-purpose API with good ergonomics.
     #[doc(hidden)]
-    pub fn update_source_fields(&self, source: &Source) -> Result<Source> {
+    pub fn update_source_fields(&self, source: &Source) -> Result<()> {
         if let Some(ref fields) = source.fields {
             #[derive(Debug, Serialize)]
             struct FieldDiff {
@@ -149,7 +149,11 @@ impl Client {
                 .chain_err(&mkerr)?
                 .send()
                 .chain_err(&mkerr)?;
-            self.handle_response(res).chain_err(&mkerr)
+            // Parse our result as JSON, because it often seems to be missing
+            // fields like `name`.
+            let _json: serde_json::Value =
+                self.handle_response(res).chain_err(&mkerr)?;
+            Ok(())
         } else {
             Err(format!("No fields to update in {}", source.id()).into())
         }
