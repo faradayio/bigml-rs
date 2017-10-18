@@ -4,6 +4,7 @@ use reqwest;
 use serde::de::DeserializeOwned;
 use serde_json;
 use std::collections::HashMap;
+use std::fs::File;
 use std::io::Read;
 use std::iter::FromIterator;
 use std::path::Path;
@@ -25,6 +26,8 @@ lazy_static! {
 pub struct Client {
     username: String,
     api_key: String,
+    proxy_url: Option<String>,
+    tls_certificate_files: Vec<String>,
 }
 
 impl Client {
@@ -35,7 +38,21 @@ impl Client {
         Ok(Client {
             username: username.into(),
             api_key: api_key.into(),
+            proxy_url: None,
+            tls_certificate_files: Vec::new(),
         })
+    }
+
+    /// Set a proxy server to use for requests to the BigML API. It should be an
+    /// HTTPS proxy, e.g. "https://my-proxy.com:8080"
+    pub fn set_proxy_url(&mut self, url: String) {
+        self.proxy_url = Some(url);
+    }
+
+    /// Add a path to a root TLS certificate file. This is useful when defining
+    /// an HTTPS proxy that requires its own cert.
+    pub fn add_tls_root_certificate(&mut self, path: String) {
+        self.tls_certificate_files.push(path);
     }
 
     /// Format our BigML auth credentials.
@@ -58,8 +75,8 @@ impl Client {
         let url = self.url(Args::Resource::create_path());
         debug!("POST {} {:#?}", Args::Resource::create_path(), &serde_json::to_string(args));
         let mkerr = || ErrorKind::could_not_access_url(url.clone());
-        let client = reqwest::Client::new()
-            .chain_err(&mkerr)?;
+        let client = self.reqwest_client(&url)?;
+
         let res = client.post(url.clone())
             .chain_err(&mkerr)?
             .json(args)
@@ -89,8 +106,7 @@ impl Client {
         // Post our request.
         let url = self.url("/source");
         let mkerr = || ErrorKind::could_not_access_url(url.clone());
-        let client = reqwest::Client::new()
-            .chain_err(&mkerr)?;
+        let client = self.reqwest_client(&url)?;
         let res = client.post(url.clone())
             .chain_err(&mkerr)?
             .header(reqwest::header::ContentType(body.mime_type()))
@@ -141,8 +157,7 @@ impl Client {
             let url = self.url(source.id().as_str());
             let mkerr = || ErrorKind::could_not_access_url(url.clone());
             debug!("PUT {}: {:?}", &url, &body);
-            let client = reqwest::Client::new()
-                .chain_err(&mkerr)?;
+            let client = self.reqwest_client(&url)?;
             let res = client.request(reqwest::Method::Put, url.clone())
                 .chain_err(&mkerr)?
                 .json(&body)
@@ -163,8 +178,7 @@ impl Client {
     pub fn fetch<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
         let url = self.url(resource.as_str());
         let mkerr = || ErrorKind::could_not_access_url(url.clone());
-        let client = reqwest::Client::new()
-            .chain_err(&mkerr)?;
+        let client = self.reqwest_client(&url)?;
         let res = client.get(url.clone())
             .chain_err(&mkerr)?
             .send()
@@ -201,8 +215,7 @@ impl Client {
                                  -> Result<reqwest::Response> {
         let url = self.url(&format!("{}/download", &resource));
         let mkerr = || ErrorKind::could_not_access_url(url.clone());
-        let client = reqwest::Client::new()
-            .chain_err(&mkerr)?;
+        let client = self.reqwest_client(&url)?;
         let res = client.get(url.clone())
             .chain_err(&mkerr)?
             .send()
@@ -219,8 +232,7 @@ impl Client {
     pub fn delete<R: Resource>(&self, resource: &Id<R>) -> Result<()> {
         let url = self.url(resource.as_str());
         let mkerr = || ErrorKind::could_not_access_url(url.clone());
-        let client = reqwest::Client::new()
-            .chain_err(&mkerr)?;
+        let client = self.reqwest_client(&url)?;
         let res = client.request(reqwest::Method::Delete, url.clone())
             .chain_err(&mkerr)?
             .send()
@@ -254,5 +266,29 @@ impl Client {
         res.read_to_string(&mut body)?;
         debug!("Error body: {}", &body);
         Err(ErrorKind::UnexpectedHttpStatus(res.status().to_owned(), body).into())
+    }
+
+    fn reqwest_client(&self, url: &Url) -> Result<reqwest::Client> {
+        let mkerr = || ErrorKind::could_not_access_url(url.clone());
+        let mut client = reqwest::Client::builder()
+            .chain_err(&mkerr)?;
+
+        if let Some(ref proxy) = self.proxy_url {
+            debug!("Using HTTPS proxy {}", proxy);
+            client.proxy(reqwest::Proxy::all(proxy)?);
+        }
+
+        for certificate_path in &self.tls_certificate_files {
+            debug!("Using TLS certificate file at {}", certificate_path);
+            let mut cert_buf = Vec::new();
+            File::open(certificate_path)?
+                .read_to_end(&mut cert_buf)?;
+
+            let cert = reqwest::Certificate::from_der(&cert_buf)?;
+
+            client.add_root_certificate(cert)?;
+        }
+
+        Ok(client.build()?)
     }
 }
