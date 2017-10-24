@@ -58,12 +58,9 @@ impl Client {
         let url = self.url(Args::Resource::create_path());
         debug!("POST {} {:#?}", Args::Resource::create_path(), &serde_json::to_string(args));
         let mkerr = || ErrorKind::could_not_access_url(url.clone());
-        let client = reqwest::Client::new()
-            .chain_err(&mkerr)?;
+        let client = reqwest::Client::new();
         let res = client.post(url.clone())
-            .chain_err(&mkerr)?
             .json(args)
-            .chain_err(&mkerr)?
             .send()
             .chain_err(&mkerr)?;
         self.handle_response(res).chain_err(&mkerr)
@@ -89,10 +86,8 @@ impl Client {
         // Post our request.
         let url = self.url("/source");
         let mkerr = || ErrorKind::could_not_access_url(url.clone());
-        let client = reqwest::Client::new()
-            .chain_err(&mkerr)?;
+        let client = reqwest::Client::new();
         let res = client.post(url.clone())
-            .chain_err(&mkerr)?
             .header(reqwest::header::ContentType(body.mime_type()))
             .body(body)
             .send()
@@ -141,12 +136,9 @@ impl Client {
             let url = self.url(source.id().as_str());
             let mkerr = || ErrorKind::could_not_access_url(url.clone());
             debug!("PUT {}: {:?}", &url, &body);
-            let client = reqwest::Client::new()
-                .chain_err(&mkerr)?;
+            let client = reqwest::Client::new();
             let res = client.request(reqwest::Method::Put, url.clone())
-                .chain_err(&mkerr)?
                 .json(&body)
-                .chain_err(&mkerr)?
                 .send()
                 .chain_err(&mkerr)?;
             // Parse our result as JSON, because it often seems to be missing
@@ -163,10 +155,8 @@ impl Client {
     pub fn fetch<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
         let url = self.url(resource.as_str());
         let mkerr = || ErrorKind::could_not_access_url(url.clone());
-        let client = reqwest::Client::new()
-            .chain_err(&mkerr)?;
+        let client = reqwest::Client::new();
         let res = client.get(url.clone())
-            .chain_err(&mkerr)?
             .send()
             .chain_err(&mkerr)?;
         self.handle_response(res).chain_err(&mkerr)
@@ -208,10 +198,8 @@ impl Client {
                                  -> Result<reqwest::Response> {
         let url = self.url(&format!("{}/download", &resource));
         let mkerr = || ErrorKind::could_not_access_url(url.clone());
-        let client = reqwest::Client::new()
-            .chain_err(&mkerr)?;
+        let client = reqwest::Client::new();
         let res = client.get(url.clone())
-            .chain_err(&mkerr)?
             .send()
             .chain_err(&mkerr)?;
         if res.status().is_success() {
@@ -226,10 +214,8 @@ impl Client {
     pub fn delete<R: Resource>(&self, resource: &Id<R>) -> Result<()> {
         let url = self.url(resource.as_str());
         let mkerr = || ErrorKind::could_not_access_url(url.clone());
-        let client = reqwest::Client::new()
-            .chain_err(&mkerr)?;
+        let client = reqwest::Client::new();
         let res = client.request(reqwest::Method::Delete, url.clone())
-            .chain_err(&mkerr)?
             .send()
             .chain_err(&mkerr)?;
         if res.status().is_success() {
