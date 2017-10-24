@@ -71,7 +71,7 @@ impl ErrorKind {
 
 /// Given a URL with a possible `api_key` parameter, replace the `api_key` with
 /// `*****` to minimize the risk of leaking credentials into logs somewhere.
-fn url_without_api_key(url: &Url) -> Url {
+pub(crate) fn url_without_api_key(url: &Url) -> Url {
     // Extract all our query parameters.
     let mut query = BTreeMap::new();
     for (k, v) in url.query_pairs() {

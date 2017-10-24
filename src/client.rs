@@ -174,18 +174,25 @@ impl Client {
 
     /// Poll an existing resource, returning it once it's ready.
     pub fn wait<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
+        let mut error_count: u32 = 0;
         loop {
             let res = self.fetch(resource)?;
             if res.status().code().is_ready() {
                 return Ok(res);
             } else if res.status().code().is_err() {
-                // TODO: We should probably allow a few errors before
-                // giving up, and we should probably have some sort of
-                // timeout.
                 let err: Error = res.status().message().into();
                 let url = self.url(resource.as_str());
-                return Err(err)
-                    .chain_err(|| ErrorKind::could_not_access_url(url.clone()));
+                if error_count < 5 {
+                    debug!(
+                        "Error fetching {}, retrying: {}",
+                        url_without_api_key(&url),
+                        err,
+                    );
+                    error_count += 1;
+                } else {
+                    return Err(err)
+                        .chain_err(|| ErrorKind::could_not_access_url(url.clone()));
+                }
             }
 
             // If we're not ready, then sleep 10 seconds.  Anything less
