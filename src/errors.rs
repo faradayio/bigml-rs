@@ -97,8 +97,8 @@ pub(crate) fn url_without_api_key(url: &Url) -> Url {
 
 #[test]
 fn url_without_api_key_is_sanitized() {
-    let url = Url::parse("https://www.example.com/?a=b&api_key=12345")
+    let url = Url::parse("https://www.example.com/foo?a=b&api_key=12345")
         .expect("could not parse URL");
     let cleaned = url_without_api_key(&url);
-    assert_eq!(cleaned.as_str(), "https://www.example.com/?a=b&api_key=*****");
+    assert_eq!(cleaned.as_str(), "https://www.example.com/foo?a=b&api_key=*****");
 }

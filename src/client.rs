@@ -40,7 +40,7 @@ impl Client {
 
     /// Format our BigML auth credentials.
     fn auth(&self) -> String {
-        format!("username={};api_key={}", self.username, self.api_key)
+        format!("username={}&api_key={}", self.username, self.api_key)
     }
 
     /// Generate an authenticate URL with the specified path.
@@ -248,4 +248,13 @@ impl Client {
         debug!("Error body: {}", &body);
         Err(ErrorKind::UnexpectedHttpStatus(res.status().to_owned(), body).into())
     }
+}
+
+#[test]
+fn client_url_is_sanitizable() {
+    let client = Client::new("example", "secret").unwrap();
+    let err: Error = ErrorKind::could_not_access_url(client.url("/test")).into();
+    let err_str = format!("{}", err);
+    println!("err_str = {:?}", err_str);
+    assert!(!err_str.contains("secret"));
 }

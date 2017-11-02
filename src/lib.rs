@@ -28,10 +28,3 @@ mod client;
 mod errors;
 mod multipart_form_data;
 pub mod resource;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-    }
-}
