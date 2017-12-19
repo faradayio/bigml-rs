@@ -158,7 +158,7 @@ impl<'de> Deserialize<'de> for Output {
             type Value = Output;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                write!(f, "either a string or an array of three strings")
+                write!(f, "either a string or a [name, value, type] sequence")
             }
 
             fn visit_str<E>(self, v: &str)
@@ -230,4 +230,19 @@ fn deserialize_output_with_everything() {
     let value: Id<Evaluation<ClassificationResult>> = output.get().unwrap();
     assert_eq!(value.as_str(), "evaluation/50650d563c19202679000000");
     assert_eq!(output.type_.unwrap(), "evaluation");
+}
+
+#[test]
+fn deserialize_multiple_outputs() {
+    // This _appears_ to be breaking in one caller of `bigml`, so let's put
+    // in some tests to ensure that it actually works.
+    let json = r#"
+    [
+      ["evaluation", null, ""],
+      ["final-ensemble", null, ""],
+      ["fields", ["label", "id"], "list"]
+    ]
+    "#;
+    let outputs: Vec<Output> = serde_json::from_str(&json).unwrap();
+    assert_eq!(outputs.len(), 3);
 }
