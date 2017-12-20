@@ -195,7 +195,7 @@ impl<'de> Deserialize<'de> for Output {
             }
         }
 
-        deserializer.deserialize_i32(OutputVisitor)
+        deserializer.deserialize_seq(OutputVisitor)
     }
 }
 
