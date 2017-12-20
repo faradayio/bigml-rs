@@ -195,7 +195,7 @@ impl<'de> Deserialize<'de> for Output {
             }
         }
 
-        deserializer.deserialize_seq(OutputVisitor)
+        deserializer.deserialize_any(OutputVisitor)
     }
 }
 
