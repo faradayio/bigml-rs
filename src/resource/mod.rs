@@ -17,6 +17,7 @@ pub use self::dataset::Dataset;
 pub use self::ensemble::{Ensemble, EnsembleField};
 pub use self::evaluation::Evaluation;
 pub use self::execution::Execution;
+pub use self::library::Library;
 pub use self::script::Script;
 pub use self::source::Source;
 
@@ -162,5 +163,6 @@ pub mod dataset;
 pub mod ensemble;
 pub mod evaluation;
 pub mod execution;
+pub mod library;
 pub mod script;
 pub mod source;
