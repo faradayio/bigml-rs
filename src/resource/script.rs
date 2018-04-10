@@ -29,20 +29,34 @@ resource! {
 #[derive(Debug, Serialize)]
 pub struct Args {
     /// The category code which best describes this script.
+    #[serde(skip_serializing_if="Option::is_none")]
     pub category: Option<i64>,
+
     /// A human-readable description of this script.
+    #[serde(skip_serializing_if="Option::is_none")]
     pub description: Option<String>,
+
     /// A list of "library/..." identifiers to import.
+    #[serde(skip_serializing_if="Vec::is_empty")]
     pub imports: Vec<Id<Library>>,
+
     /// A list of script input declarations.
+    #[serde(skip_serializing_if="Vec::is_empty")]
     pub inputs: Vec<Input>,
+
     /// A human-readable name for this script.
+    #[serde(skip_serializing_if="Option::is_none")]
     pub name: Option<String>,
+
     /// A list of script output declarations.
+    #[serde(skip_serializing_if="Vec::is_empty")]
     pub outputs: Vec<Output>,
+
     /// The source code of this script.
     pub source_code: String,
+
     /// Tags to make it easier to find this script.
+    #[serde(skip_serializing_if="Vec::is_empty")]
     pub tags: Vec<String>,
 }
 
