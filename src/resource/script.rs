@@ -58,6 +58,11 @@ pub struct Args {
     /// Tags to make it easier to find this script.
     #[serde(skip_serializing_if="Vec::is_empty")]
     pub tags: Vec<String>,
+
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
 }
 
 impl Args {
@@ -72,6 +77,7 @@ impl Args {
             outputs: Default::default(),
             source_code: source_code.into(),
             tags: Default::default(),
+            _hidden: (),
         }
     }
 }
