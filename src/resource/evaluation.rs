@@ -14,7 +14,7 @@ resource! {
     /// An evaluation of how well a model (or ensemble) predicts the data.
     ///
     /// TODO: Still lots of missing fields.
-    #[derive(Debug, Deserialize, Clone)]
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     #[serde(bound(deserialize = ""))]
     pub struct Evaluation<R: Result> {
         /// The status of this resource.

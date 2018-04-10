@@ -12,7 +12,7 @@ resource! {
     /// An ensemble of multiple predictive models.
     ///
     /// TODO: Still lots of missing fields.
-    #[derive(Debug, Deserialize, Clone)]
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Ensemble {
         /// The current status of this ensemble.
         pub status: GenericStatus,
@@ -36,7 +36,7 @@ resource! {
 }
 
 /// Information about this ensemble.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct EnsembleInfo {
     /// Information about this ensemble's fields. Keyed by BigML field ID.
     pub fields: HashMap<String, EnsembleField>,
@@ -48,7 +48,7 @@ pub struct EnsembleInfo {
 }
 
 /// List of field codes mapped to input fields
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct EnsembleField {
     /// The original name of this field (not the BigML field ID).
     pub name: String,

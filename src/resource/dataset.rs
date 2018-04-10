@@ -10,7 +10,7 @@ resource! {
     /// A BigML dataset. Basically a table of data with named columns.
     ///
     /// TODO: Still lots of missing fields.
-    #[derive(Debug, Deserialize, Clone)]
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Dataset {
         /// The current status of this execution.
         pub status: GenericStatus,

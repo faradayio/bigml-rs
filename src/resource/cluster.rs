@@ -12,7 +12,7 @@ resource! {
     /// An cluster of multiple predictive models.
     ///
     /// TODO: Still lots of missing fields.
-    #[derive(Debug, Deserialize, Clone)]
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Cluster {
         /// The current status of this cluster.
         pub status: GenericStatus,

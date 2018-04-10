@@ -1,8 +1,9 @@
 //! An execution of a WhizzML script.
 
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::DeserializeOwned;
 use serde::de;
+use serde::ser::SerializeSeq;
 use serde_json;
 use std::error;
 use std::fmt;
@@ -20,7 +21,7 @@ resource! {
     /// An execution of a WhizzML script.
     ///
     /// TODO: Still lots of missing fields.
-    #[derive(Debug, Deserialize, Clone)]
+    #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Execution {
         /// The current status of this execution.
         pub status: GenericStatus,
@@ -33,7 +34,7 @@ resource! {
 /// Data about a script execution.
 ///
 /// TODO: Lots of missing fields.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Data {
     /// Outputs from this script.
     #[serde(default)]
@@ -64,7 +65,7 @@ impl Data {
 /// Arguments for creating a script execution.
 ///
 /// TODO: Lots of missing fields.
-#[derive(Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Args {
     /// The ID of the script to run.
     pub script: Option<Id<Script>>,
@@ -111,7 +112,7 @@ impl super::Args for Args {
 }
 
 /// A named output value from an execution.
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Output {
     /// The name of this output.
     pub name: String,
@@ -245,4 +246,22 @@ fn deserialize_multiple_outputs() {
     "#;
     let outputs: Vec<Output> = serde_json::from_str(&json).unwrap();
     assert_eq!(outputs.len(), 3);
+}
+
+impl Serialize for Output {
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        // Always serialize in "canonical" form.
+        let mut seq = serializer.serialize_seq(Some(3))?;
+        seq.serialize_element(&self.name)?;
+        seq.serialize_element(&self.value)?;
+        if let Some(ref type_) = self.type_ {
+            seq.serialize_element(type_)?;
+        } else {
+            // Gross: This is represented as an empty string instead of NULL.
+            seq.serialize_element("")?;
+        }
+        seq.end()
+    }
 }

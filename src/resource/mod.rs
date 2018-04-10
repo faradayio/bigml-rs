@@ -21,7 +21,7 @@ pub use self::script::Script;
 pub use self::source::Source;
 
 /// A shared interface to all BigML resource types.
-pub trait Resource: fmt::Debug + DeserializeOwned {
+pub trait Resource: fmt::Debug + DeserializeOwned + Serialize {
     /// The prefix used for all IDs of this type.
     fn id_prefix() -> &'static str;
 

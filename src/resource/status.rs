@@ -1,6 +1,6 @@
 //! Types represesting the status of a BigML resource.
 
-use serde::{self, Deserialize, Deserializer};
+use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::Unexpected;
 use std::result;
 
@@ -70,6 +70,24 @@ impl<'de> Deserialize<'de> for StatusCode {
     }
 }
 
+impl Serialize for StatusCode {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        let code = match *self {
+            StatusCode::Waiting => 0,
+            StatusCode::Queued => 1,
+            StatusCode::Started => 2,
+            StatusCode::InProgress => 3,
+            StatusCode::Summarized => 4,
+            StatusCode::Finished => 5,
+            StatusCode::Faulty => -1,
+            StatusCode::Unknown => -2,
+        };
+        code.serialize(serializer)
+    }
+}
+
 /// Status of a resource.  BigML actually defines many different "status"
 /// types, one for each resource, but quite a few of them have are highly
 /// similar.  This interface tries to generalize over the most common
@@ -90,7 +108,7 @@ pub trait Status {
 }
 
 /// Status of a generic resource.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct GenericStatus {
     /// Status code.
     pub code: StatusCode,
