@@ -99,6 +99,7 @@ pub struct Input {
     /// A description of this input.
     pub description: Option<String>,
     /// Placeholder to allow extensibility without breaking the API.
+    #[serde(default, skip_serializing)]
     _placeholder: (),
 }
 
@@ -125,6 +126,21 @@ pub struct Output {
     pub type_: Type,
     /// A description of this output.
     pub description: Option<String>,
+    /// Placeholder to allow extensibility without breaking API.
+    #[serde(default, skip_serializing)]
+    _placeholder: (),
+}
+
+impl Output {
+    /// Create a new `Output` value.
+    pub fn new<S: Into<String>>(name: S, type_: Type) -> Output {
+        Output {
+            name: name.into(),
+            type_: type_,
+            description: None,
+            _placeholder: (),
+        }
+    }
 }
 
 /// Helper macro to declare `Type`.
