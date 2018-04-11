@@ -98,6 +98,21 @@ pub struct Input {
     pub default: Option<serde_json::Value>,
     /// A description of this input.
     pub description: Option<String>,
+    /// Placeholder to allow extensibility without breaking the API.
+    _placeholder: (),
+}
+
+impl Input {
+    /// Create a new `Input` value.
+    pub fn new<S: Into<String>>(name: S, type_: Type) -> Input {
+        Input {
+            name: name.into(),
+            type_: type_,
+            default: None,
+            description: None,
+            _placeholder: (),
+        }
+    }
 }
 
 /// A script output declaration.
