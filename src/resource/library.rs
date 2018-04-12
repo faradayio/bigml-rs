@@ -14,5 +14,59 @@ resource! {
     pub struct Library {
         /// The current status of this execution.
         pub status: GenericStatus,
+
+        /// The source code of this library.
+        pub source_code: String,
     }
+}
+
+/// Arguments used to create a new BigML script.
+#[derive(Debug, Serialize)]
+pub struct Args {
+    /// The category code which best describes this script.
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub category: Option<i64>,
+
+    /// A human-readable description of this script.
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub description: Option<String>,
+
+    /// A list of "library/..." identifiers to import.
+    #[serde(skip_serializing_if="Vec::is_empty")]
+    pub imports: Vec<Id<Library>>,
+
+    /// A human-readable name for this script.
+    #[serde(skip_serializing_if="Option::is_none")]
+    pub name: Option<String>,
+
+    /// The source code of this script.
+    pub source_code: String,
+
+    /// Tags to make it easier to find this script.
+    #[serde(skip_serializing_if="Vec::is_empty")]
+    pub tags: Vec<String>,
+
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
+}
+
+impl Args {
+    /// Create a new `ScriptNew` value.
+    pub fn new<S: Into<String>>(source_code: S) -> Args {
+        Args {
+            category: Default::default(),
+            description: Default::default(),
+            imports: Default::default(),
+            name: Default::default(),
+            source_code: source_code.into(),
+            tags: Default::default(),
+            _hidden: (),
+        }
+    }
+}
+
+impl super::Args for Args {
+    type Resource = Library;
 }
