@@ -575,7 +575,6 @@ impl<'de> Deserialize<'de> for SourceId {
                 write!(f, "a script or library ID")
             }
 
-
             fn visit_str<E>(self, value: &str) -> result::Result<Self::Value, E>
                 where E: de::Error
             {
@@ -593,7 +592,7 @@ impl<'de> Deserialize<'de> for SourceId {
             }
         }
 
-        deserializer.deserialize_seq(Visitor)
+        deserializer.deserialize_str(Visitor)
     }
 }
 
