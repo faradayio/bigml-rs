@@ -33,6 +33,7 @@ resource! {
         pub execution: Data,
 
         /// Source files used as inputs to this execution.
+        #[serde(default)]
         pub sources: Vec<Source>,
     }
 }
