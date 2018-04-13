@@ -97,7 +97,7 @@ pub struct SourceLocation {
 
     /// File in which the error occurred, probably as a position in the
     /// `sources` array?
-    pub origin: u64,
+    pub origin: usize,
 
     /// For extensibility.
     #[serde(default, skip_serializing)]
@@ -468,6 +468,10 @@ pub struct OutputResource {
 
     /// This appears to be a textual representation of a `StatusCode`.
     pub state: String,
+
+    /// For extensibility.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
 }
 
 /// Information about a source code resource.
@@ -543,6 +547,15 @@ impl SourceId {
             SourceId::Script(ref id) => {
                 Ok(client.fetch(id)?.source_code)
             }
+        }
+    }
+}
+
+impl fmt::Display for SourceId {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            SourceId::Library(ref id) => id.fmt(fmt),
+            SourceId::Script(ref id) => id.fmt(fmt),
         }
     }
 }
