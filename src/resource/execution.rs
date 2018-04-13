@@ -54,6 +54,7 @@ pub struct ExecutionStatus {
     pub progress: Option<f32>,
 
     /// The number of milliseconds elapsed during different phases of execution.
+    #[serde(default)]
     pub elapsed_times: HashMap<String, u64>,
 
     /// (Undocumented) Where are we in the script's execution? This is
