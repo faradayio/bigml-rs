@@ -6,15 +6,17 @@ use serde::de::DeserializeOwned;
 use serde::de;
 use serde::ser::SerializeSeq;
 use serde_json;
+use std::collections::HashMap;
 use std::error;
 use std::fmt;
 use std::result;
 
+use client::Client;
 use errors::*;
 use super::id::*;
 use super::status::*;
 use super::Resource;
-use super::Script;
+use super::{Library, Script};
 
 resource! {
     api_name "execution";
@@ -25,11 +27,79 @@ resource! {
     #[derive(Clone, Debug, Deserialize, Serialize)]
     pub struct Execution {
         /// The current status of this execution.
-        pub status: GenericStatus,
+        pub status: ExecutionStatus,
 
         /// Further information about this execution.
         pub execution: Data,
+
+        /// Source files used as inputs to this execution.
+        pub sources: Vec<Source>,
     }
+}
+
+/// Execution-specific status information.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ExecutionStatus {
+    /// Status code.
+    pub code: StatusCode,
+
+    /// Human-readable status message.
+    pub message: String,
+
+    /// Number of milliseconds which were needed to create this resource.
+    pub elapsed: Option<u64>,
+
+    /// Number between 0.0 and 1.0 representing the progress of creating
+    /// this resource.
+    pub progress: Option<f32>,
+
+    /// The number of milliseconds elapsed during different phases of execution.
+    pub elapsed_times: HashMap<String, u64>,
+
+    /// (Undocumented) Where are we in the script's execution? This is
+    /// particularly useful when an error occurs.
+    pub source_location: Option<SourceLocation>,
+
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
+}
+
+impl Status for ExecutionStatus {
+    fn code(&self) -> StatusCode {
+        self.code
+    }
+
+    fn message(&self) -> &str {
+        &self.message
+    }
+
+    fn elapsed(&self) -> Option<u64> {
+        self.elapsed
+    }
+
+    fn progress(&self) -> Option<f32> {
+        self.progress
+    }
+}
+
+/// A location in an execution's source code.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SourceLocation {
+    /// Start and end column.
+    pub columns: (u64, u64),
+
+    /// Start and end line.
+    pub lines: (u64, u64),
+
+    /// File in which the error occurred, probably as a position in the
+    /// `sources` array?
+    pub origin: u64,
+
+    /// For extensibility.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
 }
 
 /// Data about a script execution.
@@ -396,4 +466,129 @@ pub struct OutputResource {
 
     /// This appears to be a textual representation of a `StatusCode`.
     pub state: String,
+}
+
+/// Information about a source code resource.
+#[derive(Clone, Debug)]
+pub struct Source {
+    /// The script or library associated with this source.
+    pub id: SourceId,
+    /// The description associated with this source.
+    pub description: String,
+}
+
+impl<'de> Deserialize<'de> for Source {
+    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+        where D: Deserializer<'de>,
+    {
+        struct Visitor;
+
+        // Do a whole bunch of annoying work needed to deserialize mixed-type
+        // arrays.
+        impl<'de> de::Visitor<'de> for Visitor {
+            type Value = Source;
+
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "a list with a source ID and a description")
+            }
+
+            fn visit_seq<V>(self, mut visitor: V)
+                            -> result::Result<Self::Value, V::Error>
+                where V: de::SeqAccess<'de>
+            {
+                use serde::de::Error;
+
+                let id = visitor.next_element()?
+                    .ok_or_else(|| V::Error::custom("no id field in source"))?;
+                let description = visitor.next_element()?
+                    .ok_or_else(|| V::Error::custom("no description field in source"))?;
+
+                Ok(Source { id, description })
+            }
+        }
+
+        deserializer.deserialize_seq(Visitor)
+    }
+}
+
+impl Serialize for Source {
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        let mut seq = serializer.serialize_seq(Some(2))?;
+        seq.serialize_element(&self.id)?;
+        seq.serialize_element(&self.description)?;
+        seq.end()
+    }
+}
+
+/// Either a script or library ID.
+#[derive(Clone, Debug)]
+pub enum SourceId {
+    /// A library ID.
+    Library(Id<Library>),
+    /// A script ID.
+    Script(Id<Script>),
+}
+
+impl SourceId {
+    /// Download the corresponding source code.
+    pub fn fetch_source_code(&self, client: &Client) -> Result<String> {
+        match *self {
+            SourceId::Library(ref id) => {
+                Ok(client.fetch(id)?.source_code)
+            }
+            SourceId::Script(ref id) => {
+                Ok(client.fetch(id)?.source_code)
+            }
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for SourceId {
+    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+        where D: Deserializer<'de>,
+    {
+        struct Visitor;
+
+        // Do a whole bunch of annoying work needed to deserialize mixed-type
+        // arrays.
+        impl<'de> de::Visitor<'de> for Visitor {
+            type Value = SourceId;
+
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "a script or library ID")
+            }
+
+
+            fn visit_str<E>(self, value: &str) -> result::Result<Self::Value, E>
+                where E: de::Error
+            {
+                if value.starts_with(Library::id_prefix()) {
+                    let id = value.parse()
+                       .map_err(|e| de::Error::custom(format!("{}", e)))?;
+                    Ok(SourceId::Library(id))
+                } else if value.starts_with(Script::id_prefix()) {
+                    let id = value.parse()
+                       .map_err(|e| de::Error::custom(format!("{}", e)))?;
+                    Ok(SourceId::Script(id))
+                } else {
+                    Err(de::Error::custom("expected script or library ID"))
+                }
+            }
+        }
+
+        deserializer.deserialize_seq(Visitor)
+    }
+}
+
+impl Serialize for SourceId {
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        match *self {
+            SourceId::Library(ref id) => id.serialize(serializer),
+            SourceId::Script(ref id) => id.serialize(serializer),
+        }
+    }
 }
