@@ -31,10 +31,6 @@ resource! {
 
         /// Further information about this execution.
         pub execution: Data,
-
-        /// Source files used as inputs to this execution.
-        #[serde(default)]
-        pub sources: Vec<Source>,
     }
 }
 
@@ -124,6 +120,10 @@ pub struct Data {
     /// BigML resources created by the script.
     #[serde(default)]
     pub output_resources: Vec<OutputResource>,
+
+    /// Source files used as inputs to this execution.
+    #[serde(default)]
+    pub sources: Vec<Source>,
 
     /// Having one hidden field makes it possible to extend this struct
     /// without breaking semver API guarantees.
