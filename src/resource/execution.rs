@@ -464,7 +464,7 @@ pub struct OutputResource {
     pub progress: f64,
 
     /// A human-readable description of what's currently happening.
-    pub task: String,
+    pub task: Option<String>,
 
     /// This appears to be a textual representation of a `StatusCode`.
     pub state: String,
