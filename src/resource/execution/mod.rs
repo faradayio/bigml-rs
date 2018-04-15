@@ -37,8 +37,6 @@ resource! {
     }
 }
 
-
-
 /// Data about a script execution.
 ///
 /// TODO: Lots of missing fields.
@@ -214,7 +212,3 @@ impl Serialize for SourceId {
         }
     }
 }
-
-/*
-"status": {"call_stack": [[1, [109, 109], [14, 65]], [1, [109, 109], [15, 17]]], "code": -1, "elapsed": 62321, "elapsed_times": {"in-progress": 62265, "queued": 140, "started": 56}, "error": -8200, "instruction": {"instruction": "push-procedure", "source": {"columns": [14, 65], "lines": [109, 109], "origin": 1}}, "message": "Problem while executing script:  'get' expects 2 or 3 arguments, 4 given", "progress": 0.195, "source_location": {"columns": [0, 34], "lines": [97, 97], "origin": 1}}
-*/
