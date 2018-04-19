@@ -1,4 +1,6 @@
+use serde_json;
 use std::collections::HashMap;
+use std::fmt;
 
 use resource::status::*;
 
@@ -22,9 +24,17 @@ pub struct ExecutionStatus {
     #[serde(default, skip_serializing_if="Option::is_none", with="call_stack_repr")]
     pub call_stack: Option<Vec<SourceLocation>>,
 
+    /// The cause of the error.
+    pub cause: Option<Cause>,
+
     /// The number of milliseconds elapsed during different phases of execution.
     #[serde(default)]
     pub elapsed_times: HashMap<String, u64>,
+
+    /// Extra information about errors, typically mapping field names to
+    /// field-specific error messages.
+    #[serde(default)]
+    pub extra: HashMap<String, String>,
 
     /// The instruction at which an error occurred.
     pub instruction: Option<Instruction>,
@@ -37,6 +47,18 @@ pub struct ExecutionStatus {
     /// without breaking semver API guarantees.
     #[serde(default, skip_serializing)]
     _hidden: (),
+}
+
+impl ExecutionStatus {
+    /// The `message` for this status, plus the `cause` and any other useful
+    /// information that might be present.
+    pub fn full_message(&self) -> String {
+        if let Some(ref cause) = self.cause {
+            format!("{} ({})", self.message, cause)
+        } else {
+            self.message.clone()
+        }
+    }
 }
 
 impl Status for ExecutionStatus {
@@ -111,6 +133,37 @@ pub struct SourceLocation {
     _hidden: (),
 }
 
+/// The cause of an error.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Cause {
+    /// The error code of the underlying error.
+    pub code: i64,
+
+    /// Extra information about the underlying error (may be a list or
+    /// hash, possibly other things).
+    #[serde(default)]
+    pub extra: serde_json::Value,
+
+    /// The HTTP status related to the underlying error.
+    pub http_status: u16,
+
+    /// For extensibility.
+    #[serde(default, skip_serializing)]
+    _hidden: (),
+}
+
+impl fmt::Display for Cause {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "code: {}, HTTP status: {}, extra: {}",
+            self.code,
+            self.http_status,
+            self.extra,
+        )
+    }
+}
+
 /// Information on the instruction where an error occurred.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Instruction {
@@ -130,4 +183,8 @@ fn deserialize_error_status() {
     use serde_json;
     let json = r#"{"call_stack": [[1, [109, 109], [14, 65]], [1, [109, 109], [15, 17]]], "code": -1, "elapsed": 62321, "elapsed_times": {"in-progress": 62265, "queued": 140, "started": 56}, "error": -8200, "instruction": {"instruction": "push-procedure", "source": {"columns": [14, 65], "lines": [109, 109], "origin": 1}}, "message": "Problem while executing script:  'get' expects 2 or 3 arguments, 4 given", "progress": 0.195, "source_location": {"columns": [0, 34], "lines": [97, 97], "origin": 1}}"#;
     let _status: ExecutionStatus = serde_json::from_str(json).unwrap();
+
+    let json = r#"{"call_stack": [[1, [32, 47], [15, 1]]], "cause": {"code": -1206, "extra": {"all_fields": "Must be true or false", "fields": "Must be an object"}, "http_status": 400}, "code": -1, "elapsed": 8896, "elapsed_times": {"in-progress": 8834, "queued": 22, "started": 62}, "error": -8200, "instruction": {"instruction": "apply", "source": {"columns": [15, 1], "lines": [32, 47], "origin": 1}}, "message": "Problem while executing script: Error handling resource (Validation error)", "progress": 0.195, "source_location": {"columns": [15, 1], "lines": [32, 47], "origin": 1}}"#;
+    let status: ExecutionStatus = serde_json::from_str(json).unwrap();
+    assert_eq!(status.cause.unwrap().code, -1206);
 }
