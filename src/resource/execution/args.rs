@@ -85,16 +85,14 @@ impl Output {
     /// conversions.  Returns an error if this output hasn't been computed
     /// yet.
     pub fn get<D: DeserializeOwned>(&self) -> Result<D> {
-        let mkerr = || ErrorKind::CouldNotGetOutput(self.name.clone());
         if let Some(ref value) = self.value {
             // We need to be explicit about the error type we want
             // `from_value` to return here.
             let result: result::Result<D, serde_json::error::Error> =
                 serde_json::value::from_value(value.to_owned());
-            result.chain_err(&mkerr)
+            result.map_err(|e| Error::could_not_get_output(&self.name, e))
         } else {
-            let err: Error = ErrorKind::OutputNotAvailable.into();
-            Err(err).chain_err(&mkerr)
+            Err(Error::could_not_get_output(&self.name, Error::OutputNotAvailable))
         }
     }
 }

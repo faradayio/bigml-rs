@@ -76,7 +76,7 @@ impl Data {
                 return output.get();
             }
         }
-        Err(ErrorKind::CouldNotGetOutput(name.to_owned()).into())
+        Err(Error::could_not_get_output(name, format_err!("not found")))
     }
 }
 

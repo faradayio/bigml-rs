@@ -30,7 +30,7 @@ impl Body {
 
         // Open up our file.
         let file = fs::File::open(&path)
-            .chain_err(|| ErrorKind::CouldNotReadFile(path.clone()))?;
+            .map_err(|e| Error::could_not_read_file(&path, e))?;
         let file_size = file.metadata()?.len();
 
         // Create a streaming, multi-part encoder.  Don't even think of

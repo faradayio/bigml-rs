@@ -39,7 +39,10 @@ impl<R: Resource> FromStr for Id<R> {
                 _phantom: PhantomData,
             })
         } else {
-            Err(ErrorKind::WrongResourceType(R::id_prefix(), id.to_owned()).into())
+            Err(Error::WrongResourceType {
+                expected: R::id_prefix(),
+                found: id.to_owned()
+            })
         }
     }
 }

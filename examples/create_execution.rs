@@ -1,14 +1,18 @@
 extern crate bigml;
 extern crate env_logger;
+extern crate failure;
 #[macro_use]
 extern crate log;
 
-use bigml::{Result, ResultExt};
 use bigml::resource;
+use failure::ResultExt;
 use std::env;
 use std::io::{self, Write};
 use std::process;
+use std::result;
 use std::str::FromStr;
+
+type Result<T> = result::Result<T, failure::Error>;
 
 /// A local helper function which does the real work, and which can return
 /// an error (unlike `main`).
@@ -19,9 +23,9 @@ fn helper(script_id: &str,
 
     // Get our BigML credentials.
     let bigml_username = env::var("BIGML_USERNAME")
-        .chain_err(|| "pass BIGML_USERNAME as an environment variable")?;
+        .context("pass BIGML_USERNAME as an environment variable")?;
     let bigml_api_key = env::var("BIGML_API_KEY")
-        .chain_err(|| "pass BIGML_API_KEY as an environment variable")?;
+        .context("pass BIGML_API_KEY as an environment variable")?;
 
     // Create a BigML client.
     let client = bigml::Client::new(bigml_username, bigml_api_key)?;
@@ -87,14 +91,12 @@ fn main() {
 
     // Dispatch to our helper function and report any errors it returns.
     if let Err(err) = helper(&script_id, &inputs, &outputs) {
-        write!(&mut io::stderr(), "ERROR").unwrap();
-        for e in err.iter() {
-            write!(&mut io::stderr(), ": {}", e).unwrap();
+        eprint!("ERROR");
+        for e in err.causes() {
+            eprint!(": {}", e);
         }
-        writeln!(&mut io::stderr(), "").unwrap();
-        if let Some(backtrace) = err.backtrace() {
-            writeln!(&mut io::stderr(), "{:?}", backtrace).unwrap();
-        }
+        eprintln!("");
+        eprintln!("{:?}", err.backtrace());
         process::exit(1);
     }
 }

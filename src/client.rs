@@ -57,13 +57,13 @@ impl Client {
     {
         let url = self.url(Args::Resource::create_path());
         debug!("POST {} {:#?}", Args::Resource::create_path(), &serde_json::to_string(args));
-        let mkerr = || ErrorKind::could_not_access_url(url.clone());
         let client = reqwest::Client::new();
         let res = client.post(url.clone())
             .json(args)
             .send()
-            .chain_err(&mkerr)?;
-        self.handle_response(res).chain_err(&mkerr)
+            .map_err(|e| Error::could_not_access_url(&url, e))?;
+        self.handle_response(res)
+            .map_err(|e| Error::could_not_access_url(&url, e))
     }
 
     /// Create a new resource, and wait until it is ready.
@@ -81,18 +81,18 @@ impl Client {
     {
         let path = path.as_ref();
         let body = multipart_form_data::Body::new("file", path)
-            .chain_err(|| ErrorKind::CouldNotReadFile(path.to_owned()))?;
+            .map_err(|e| Error::could_not_read_file(&path, e))?;
 
         // Post our request.
         let url = self.url("/source");
-        let mkerr = || ErrorKind::could_not_access_url(url.clone());
         let client = reqwest::Client::new();
         let res = client.post(url.clone())
             .header(reqwest::header::ContentType(body.mime_type()))
             .body(body)
             .send()
-            .chain_err(&mkerr)?;
-        self.handle_response(res).chain_err(&mkerr)
+            .map_err(|e| Error::could_not_access_url(&url, e))?;
+        self.handle_response(res)
+            .map_err(|e| Error::could_not_access_url(&url, e))
     }
 
     /// Create a BigML data source using data from the specified path.  We
@@ -134,32 +134,31 @@ impl Client {
             };
 
             let url = self.url(source.id().as_str());
-            let mkerr = || ErrorKind::could_not_access_url(url.clone());
             debug!("PUT {}: {:?}", &url, &body);
             let client = reqwest::Client::new();
             let res = client.request(reqwest::Method::Put, url.clone())
                 .json(&body)
                 .send()
-                .chain_err(&mkerr)?;
+                .map_err(|e| Error::could_not_access_url(&url, e))?;
             // Parse our result as JSON, because it often seems to be missing
             // fields like `name`.
-            let _json: serde_json::Value =
-                self.handle_response(res).chain_err(&mkerr)?;
+            let _json: serde_json::Value = self.handle_response(res)
+                .map_err(|e| Error::could_not_access_url(&url, e))?;
             Ok(())
         } else {
-            Err(format!("No fields to update in {}", source.id()).into())
+            Err(format_err!("No fields to update in {}", source.id()).into())
         }
     }
 
     /// Fetch an existing resource.
     pub fn fetch<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
         let url = self.url(resource.as_str());
-        let mkerr = || ErrorKind::could_not_access_url(url.clone());
         let client = reqwest::Client::new();
         let res = client.get(url.clone())
             .send()
-            .chain_err(&mkerr)?;
-        self.handle_response(res).chain_err(&mkerr)
+            .map_err(|e| Error::could_not_access_url(&url, e))?;
+        self.handle_response(res)
+            .map_err(|e| Error::could_not_access_url(&url, e))
     }
 
     /// Poll an existing resource, returning it once it's ready.
@@ -170,7 +169,7 @@ impl Client {
             if res.status().code().is_ready() {
                 return Ok(res);
             } else if res.status().code().is_err() {
-                let err: Error = res.status().message().into();
+                let err = res.status().message();
                 let url = self.url(resource.as_str());
                 if error_count < 5 {
                     debug!(
@@ -180,8 +179,8 @@ impl Client {
                     );
                     error_count += 1;
                 } else {
-                    return Err(err)
-                        .chain_err(|| ErrorKind::could_not_access_url(url.clone()));
+                    return Err(format_err!("{}", err))
+                        .map_err(|e| Error::could_not_access_url(&url, e));
                 }
             }
 
@@ -197,32 +196,32 @@ impl Client {
     pub fn download<R: Resource>(&self, resource: &Id<R>)
                                  -> Result<reqwest::Response> {
         let url = self.url(&format!("{}/download", &resource));
-        let mkerr = || ErrorKind::could_not_access_url(url.clone());
         let client = reqwest::Client::new();
         let res = client.get(url.clone())
             .send()
-            .chain_err(&mkerr)?;
+            .map_err(|e| Error::could_not_access_url(&url, e))?;
         if res.status().is_success() {
             debug!("Downloading {}", &resource);
             Ok(res)
         } else {
-            self.response_to_err(res).chain_err(&mkerr)
+            self.response_to_err(res)
+                .map_err(|e| Error::could_not_access_url(&url, e))
         }
     }
 
     /// Delete the specified resource.
     pub fn delete<R: Resource>(&self, resource: &Id<R>) -> Result<()> {
         let url = self.url(resource.as_str());
-        let mkerr = || ErrorKind::could_not_access_url(url.clone());
         let client = reqwest::Client::new();
         let res = client.request(reqwest::Method::Delete, url.clone())
             .send()
-            .chain_err(&mkerr)?;
+            .map_err(|e| Error::could_not_access_url(&url, e))?;
         if res.status().is_success() {
             debug!("Deleted {}", &resource);
             Ok(())
         } else {
-            self.response_to_err(res).chain_err(&mkerr)
+            self.response_to_err(res)
+                .map_err(|e| Error::could_not_access_url(&url, e))
         }
     }
 
@@ -246,14 +245,20 @@ impl Client {
         let mut body = String::new();
         res.read_to_string(&mut body)?;
         debug!("Error body: {}", &body);
-        Err(ErrorKind::UnexpectedHttpStatus(res.status().to_owned(), body).into())
+        Err(Error::UnexpectedHttpStatus {
+            status: res.status().to_owned(),
+            body,
+        })
     }
 }
 
 #[test]
 fn client_url_is_sanitizable() {
     let client = Client::new("example", "secret").unwrap();
-    let err: Error = ErrorKind::could_not_access_url(client.url("/test")).into();
+    let err: Error = Error::could_not_access_url(
+        &client.url("/test"),
+        format_err!("Details"),
+    );
     let err_str = format!("{}", err);
     println!("err_str = {:?}", err_str);
     assert!(!err_str.contains("secret"));

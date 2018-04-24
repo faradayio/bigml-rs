@@ -4,68 +4,114 @@
 // defines.
 #![allow(missing_docs, unused_doc_comment)]
 
+use failure;
 use reqwest;
 use serde_json;
 use std::collections::BTreeMap;
 use std::io;
 use std::path::PathBuf;
+use std::result;
 use url::Url;
 
-error_chain! {
-    foreign_links {
-        Io(io::Error);
-        Json(serde_json::Error);
+/// A custom `Result`, for convenience.
+pub type Result<T> = result::Result<T, Error>;
+
+/// A BigML-related error.
+#[derive(Debug, Fail)]
+pub enum Error {
+    /// We could not access the specified URL.
+    ///
+    /// **WARNING:** Do not construct this directly, but use
+    /// `Error::could_not_access_url` to handle various URL sanitization and
+    /// security issues.
+    #[fail(display = "error accessing '{}': {}", url, error)]
+    CouldNotAccessUrl { url: Url, /*#[cause]*/ error: failure::Error },
+
+    /// We could not get an output value from a WhizzML script.
+    #[fail(display = "could not get WhizzML output '{}': {}", name, error)]
+    CouldNotGetOutput { name: String, /*#[cause]*/ error: failure::Error },
+
+    /// We could not read a file.
+    #[fail(display = "could not read file {:?}: {}", path, error)]
+    CouldNotReadFile { path: PathBuf, /*#[cause]*/ error: failure::Error },
+
+    /// We could not access an output value of a WhizzML script.
+    #[fail(display = "WhizzML output is not (yet?) available")]
+    OutputNotAvailable,
+
+    /// A request timed out.
+    #[fail(display = "The operation timed out")]
+    Timeout,
+
+    /// We received an unexpected HTTP status code.
+    #[fail(display = "{} ({})", status, body)]
+    UnexpectedHttpStatus { status: reqwest::StatusCode, body: String },
+
+    /// We found a type mismatch deserializing a BigML resource ID.
+    #[fail(display = "Expected BigML resource ID starting with '{}', found '{}'", expected, found)]
+    WrongResourceType { expected: &'static str, found: String },
+
+    /// Another kind of error occurred.
+    #[fail(display = "{}", error)]
+    Other { /*#[cause]*/ error: failure::Error },
+}
+
+impl Error {
+    /// Construct an `Error::CouldNotAccessUrl` value, taking care to
+    /// sanitize the URL query.
+    pub(crate) fn could_not_access_url<E>(
+        url: &Url,
+        error: E,
+    ) -> Error
+    where
+        E: Into<failure::Error>,
+    {
+        Error::CouldNotAccessUrl {
+            url: url_without_api_key(&url),
+            error: error.into(),
+        }
     }
 
-    errors {
-        /// We could not access the specified URL.
-        ///
-        /// **WARNING:** Do not construct this directly, but use
-        /// `ErrorKind::could_not_access_url` to handle various URL sanitization
-        /// and security issues.
-        CouldNotAccessUrl(url: Url) {
-            description("could not access URL")
-            display("could not access '{}'", url)
+    pub(crate) fn could_not_get_output<E>(
+        name: &str,
+        error: E,
+    ) -> Error
+    where
+        E: Into<failure::Error>,
+    {
+        Error::CouldNotGetOutput {
+            name: name.to_owned(),
+            error: error.into(),
         }
+    }
 
-        /// We could not get an output value from a WhizzML script.
-        CouldNotGetOutput(name: String) {
-            description("could not get WhizzML output")
-            display("could not get WhizzML output '{}'", &name)
-        }
-
-        /// We failed to read the specified file.
-        CouldNotReadFile(path: PathBuf) {
-            description("could not read file")
-            display("could not read file '{}'", &path.display())
-        }
-
-        /// We could not access an output value of a WhizzML script.
-        OutputNotAvailable {
-            description("WhizzML output is not (yet?) available")
-            display("WhizzML output is not (yet?) available")
-        }
-
-        /// We received an unexpected HTTP status code.
-        UnexpectedHttpStatus(status: reqwest::StatusCode, body: String) {
-            description("Unexpected HTTP status")
-            display("{} ({})", &status, &body)
-        }
-
-        /// We found a type mismatch deserializing a BigML resource ID.
-        WrongResourceType(expected: &'static str, found: String) {
-            description("Wrong BigML resource type found")
-            display("Expected BigML resource ID starting with '{}', found '{}'",
-                    expected, &found)
+    pub(crate) fn could_not_read_file<P, E>(path: P, error: E) -> Error
+    where
+        P: Into<PathBuf>,
+        E: Into<failure::Error>,
+    {
+        Error::CouldNotReadFile {
+            path: path.into(),
+            error: error.into(),
         }
     }
 }
 
-impl ErrorKind {
-    /// Construct an `ErrorKind::CouldNotAccessUrl` value, taking care to
-    /// sanitize the URL query.
-    pub fn could_not_access_url(url: Url) -> ErrorKind {
-        ErrorKind::CouldNotAccessUrl(url_without_api_key(&url))
+impl From<failure::Error> for Error {
+    fn from(error: failure::Error) -> Error {
+        Error::Other { error }
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(error: io::Error) -> Error {
+        Error::Other { error: error.into() }
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(error: serde_json::Error) -> Error {
+        Error::Other { error: error.into() }
     }
 }
 
