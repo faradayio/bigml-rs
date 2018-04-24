@@ -23,8 +23,10 @@ extern crate uuid;
 
 pub use client::Client;
 pub use errors::*;
+pub use wait::WaitOptions;
 
 mod client;
 mod errors;
 mod multipart_form_data;
 pub mod resource;
+pub mod wait;

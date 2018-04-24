@@ -1,19 +1,20 @@
 //! A client connection to BigML.
 
 use reqwest;
+use reqwest::header::ContentType;
 use serde::de::DeserializeOwned;
 use serde_json;
 use std::collections::HashMap;
 use std::io::Read;
 use std::iter::FromIterator;
 use std::path::Path;
-use std::thread::sleep;
 use std::time::Duration;
 use url::Url;
 
 use errors::*;
 use multipart_form_data;
 use resource::{self, Id, Resource, Source, source};
+use wait::{wait, WaitOptions, WaitStatus};
 
 lazy_static! {
     /// The URL of the BigML API.
@@ -163,50 +164,71 @@ impl Client {
 
     /// Poll an existing resource, returning it once it's ready.
     pub fn wait<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
-        let mut error_count: u32 = 0;
-        loop {
+        self.wait_opt(resource, &WaitOptions::default())
+    }
+
+    /// Poll an existing resource, returning it once it's ready, and honoring
+    /// wait options.
+    pub fn wait_opt<R: Resource>(
+        &self,
+        resource: &Id<R>,
+        options: &WaitOptions,
+    ) -> Result<R> {
+        let url = self.url(resource.as_str());
+        debug!("Waiting for {}", url_without_api_key(&url));
+        wait(&options, || {
             let res = self.fetch(resource)?;
             if res.status().code().is_ready() {
-                return Ok(res);
+                Ok(WaitStatus::Finished(res))
             } else if res.status().code().is_err() {
                 let err = res.status().message();
-                let url = self.url(resource.as_str());
-                if error_count < 5 {
-                    debug!(
-                        "Error fetching {}, retrying: {}",
-                        url_without_api_key(&url),
-                        err,
-                    );
-                    error_count += 1;
-                } else {
-                    return Err(format_err!("{}", err))
-                        .map_err(|e| Error::could_not_access_url(&url, e));
-                }
+                Err(format_err!("{}", err))
+            } else {
+                Ok(WaitStatus::Waiting)
             }
-
-            // If we're not ready, then sleep 10 seconds.  Anything less
-            // than 4 may get us rate-limited or banned according to BigML
-            // support.
-            sleep(Duration::from_secs(10));
-        }
+        }).map_err(|e| Error::could_not_access_url(&url, e))
     }
 
     /// Download a resource as a CSV file.  This only makes sense for
     /// certain kinds of resources.
-    pub fn download<R: Resource>(&self, resource: &Id<R>)
-                                 -> Result<reqwest::Response> {
+    pub fn download<R: Resource>(
+        &self,
+        resource: &Id<R>,
+    ) -> Result<reqwest::Response> {
+        let options = WaitOptions::default()
+            .timeout(Duration::from_secs(3*60));
+        self.download_opt(resource, &options)
+    }
+
+    /// Download a resource as a CSV file.  This only makes sense for
+    /// certain kinds of resources.
+    pub fn download_opt<R: Resource>(
+        &self,
+        resource: &Id<R>,
+        options: &WaitOptions,
+    ) -> Result<reqwest::Response> {
         let url = self.url(&format!("{}/download", &resource));
+        debug!("Downloading {}", url_without_api_key(&url));
         let client = reqwest::Client::new();
-        let res = client.get(url.clone())
-            .send()
-            .map_err(|e| Error::could_not_access_url(&url, e))?;
-        if res.status().is_success() {
-            debug!("Downloading {}", &resource);
-            Ok(res)
-        } else {
-            self.response_to_err(res)
-                .map_err(|e| Error::could_not_access_url(&url, e))
-        }
+        wait(&options, || {
+            let mut res = client.get(url.clone()).send()?;
+            if res.status().is_success() {
+                // Sometimes "/download" returns JSON instead of CSV, which
+                // is generally a sign that we need to wait.
+                let headers = res.headers().to_owned();
+                if let Some(ct) = headers.get::<ContentType>() {
+                    if ct.type_() == "application" && ct.subtype() == "json" {
+                        let mut body = String::new();
+                        res.read_to_string(&mut body)?;
+                        debug!("Got JSON when downloading CSV: {}", body);
+                        return Ok(WaitStatus::Waiting);
+                    }
+                }
+                Ok(WaitStatus::Finished(res))
+            } else {
+                self.response_to_err(res)
+            }
+        }).map_err(|e| Error::could_not_access_url(&url, e))
     }
 
     /// Delete the specified resource.
