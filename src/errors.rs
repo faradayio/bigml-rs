@@ -47,6 +47,16 @@ pub enum Error {
     #[fail(display = "{} ({})", status, body)]
     UnexpectedHttpStatus { status: reqwest::StatusCode, body: String },
 
+    /// We tried to create a BigML resource, but we failed. Display a dashboard
+    /// URL to make it easy to look up the actual error.
+    #[fail(display = "https://bigml.com/dashboard/{} failed ({})", id, message)]
+    WaitFailed {
+        /// The ID of the resource that we were waiting on.
+        id: String,
+        /// The message that was returned.
+        message: String,
+    },
+
     /// We found a type mismatch deserializing a BigML resource ID.
     #[fail(display = "Expected BigML resource ID starting with '{}', found '{}'", expected, found)]
     WrongResourceType { expected: &'static str, found: String },
@@ -54,6 +64,11 @@ pub enum Error {
     /// Another kind of error occurred.
     #[fail(display = "{}", error)]
     Other { /*#[cause]*/ error: failure::Error },
+
+    /// Add a hidden member for future API extensibility.
+    #[doc(none)]
+    #[fail(display = "This error should never have occurred")]
+    __Nonexclusive,
 }
 
 impl Error {

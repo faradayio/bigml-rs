@@ -181,8 +181,11 @@ impl Client {
             if res.status().code().is_ready() {
                 Ok(WaitStatus::Finished(res))
             } else if res.status().code().is_err() {
-                let err = res.status().message();
-                Err(format_err!("{}", err))
+                let message = res.status().message();
+                Err(Error::WaitFailed {
+                    id: resource.to_string(),
+                    message: message.to_owned(),
+                })
             } else {
                 Ok(WaitStatus::Waiting)
             }
