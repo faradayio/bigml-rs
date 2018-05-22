@@ -30,6 +30,10 @@ pub struct Args {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub outputs: Vec<String>,
 
+    /// User-defined tags.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
+
     /// Having one hidden field makes it possible to extend this struct
     /// without breaking semver API guarantees.
     #[serde(default, skip_serializing)]

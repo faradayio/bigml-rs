@@ -42,8 +42,8 @@ pub struct Args {
     /// The source code of this script.
     pub source_code: String,
 
-    /// Tags to make it easier to find this script.
-    #[serde(skip_serializing_if="Vec::is_empty")]
+    /// User-defined tags.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
 
     /// Having one hidden field makes it possible to extend this struct

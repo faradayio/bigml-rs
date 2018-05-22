@@ -94,7 +94,7 @@ macro_rules! resource {
             /// Text describing this resource.  May contain limited Markdown.
             pub description: String,
 
-            /// The name of this resource
+            /// The name of this resource.
             pub name: String,
 
             // What project is this associated with?
