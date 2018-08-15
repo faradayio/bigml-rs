@@ -13,6 +13,7 @@ use url::Url;
 
 use errors::*;
 use multipart_form_data;
+use progress::ProgressOptions;
 use resource::{self, Id, Resource, Source, source};
 use wait::{wait, WaitOptions, WaitStatus};
 
@@ -164,20 +165,29 @@ impl Client {
 
     /// Poll an existing resource, returning it once it's ready.
     pub fn wait<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
-        self.wait_opt(resource, &WaitOptions::default())
+        self.wait_opt(resource, &WaitOptions::default(), &ProgressOptions::default())
     }
 
     /// Poll an existing resource, returning it once it's ready, and honoring
-    /// wait options.
-    pub fn wait_opt<R: Resource>(
+    /// wait and progress options.
+    pub fn wait_opt<'a, R: Resource>(
         &self,
         resource: &Id<R>,
-        options: &WaitOptions,
+        wait_options: &WaitOptions,
+        progress_options: &ProgressOptions<'a, R>,
     ) -> Result<R> {
         let url = self.url(resource.as_str());
         debug!("Waiting for {}", url_without_api_key(&url));
-        wait(&options, || {
+        wait(&wait_options, || {
             let res = self.fetch(resource)?;
+            if let Some(callback) = progress_options.callback {
+                // We allow our progress callback to fail, but we currently
+                // treat that failure the same as a remote failure, which means
+                // that we'll retry it, which is probably not really what we
+                // want. But fixing this means adding more stuff to the `wait`
+                // API, making it less clear. Maybe someday.
+                callback(&res)?;
+            }
             if res.status().code().is_ready() {
                 Ok(WaitStatus::Finished(res))
             } else if res.status().code().is_err() {
@@ -205,7 +215,7 @@ impl Client {
 
     /// Download a resource as a CSV file.  This only makes sense for
     /// certain kinds of resources.
-    pub fn download_opt<R: Resource>(
+    pub fn download_opt<'a, R: Resource>(
         &self,
         resource: &Id<R>,
         options: &WaitOptions,

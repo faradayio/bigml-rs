@@ -2,7 +2,7 @@
 
 // Unforunately, error_chain does not generate docs for all the types it
 // defines.
-#![allow(missing_docs, unused_doc_comment)]
+#![allow(missing_docs, unused_doc_comments)]
 
 use failure;
 use reqwest;

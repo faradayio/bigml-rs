@@ -29,7 +29,7 @@ resource! {
 ///
 /// TODO: I'm not sure we want to shadow `Result`.  But this name will
 /// basically always be qualified, so maybe it's OK.
-pub trait Result: fmt::Debug + DeserializeOwned + Serialize + Sized {
+pub trait Result: fmt::Debug + DeserializeOwned + Serialize + Sized + 'static {
 }
 
 /// The result of evaluating a classifier.
