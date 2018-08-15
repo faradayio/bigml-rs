@@ -7,6 +7,7 @@ use serde::ser::SerializeSeq;
 use serde_json;
 use std::fmt;
 use std::result;
+use url::Url;
 
 use client::Client;
 use errors::*;
@@ -144,6 +145,17 @@ pub enum SourceId {
 }
 
 impl SourceId {
+    /// Build a URL pointing to the BigML dashboard view for this script.
+    pub fn dashboard_url(&self) -> Url {
+        let id_str = match self {
+            SourceId::Library(id) => id.as_str(),
+            SourceId::Script(id) => id.as_str(),
+        };
+        Url::parse(&format!("https://bigml.com/dashboard/{}", id_str))
+            // This should never fail to parse.
+            .expect("dashboard URL unexpectedly failed to parse")
+    }
+
     /// Download the corresponding source code.
     pub fn fetch_source_code(&self, client: &Client) -> Result<String> {
         match *self {
