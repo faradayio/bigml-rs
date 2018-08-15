@@ -165,7 +165,7 @@ impl Client {
 
     /// Poll an existing resource, returning it once it's ready.
     pub fn wait<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
-        self.wait_opt(resource, &WaitOptions::default(), &ProgressOptions::default())
+        self.wait_opt(resource, &WaitOptions::default(), &mut ProgressOptions::default())
     }
 
     /// Poll an existing resource, returning it once it's ready, and honoring
@@ -174,13 +174,13 @@ impl Client {
         &self,
         resource: &Id<R>,
         wait_options: &WaitOptions,
-        progress_options: &ProgressOptions<'a, R>,
+        progress_options: &mut ProgressOptions<'a, R>,
     ) -> Result<R> {
         let url = self.url(resource.as_str());
         debug!("Waiting for {}", url_without_api_key(&url));
         wait(&wait_options, || {
             let res = self.fetch(resource)?;
-            if let Some(callback) = progress_options.callback {
+            if let Some(ref mut callback) = progress_options.callback {
                 // We allow our progress callback to fail, but we currently
                 // treat that failure the same as a remote failure, which means
                 // that we'll retry it, which is probably not really what we

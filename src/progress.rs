@@ -3,18 +3,17 @@
 use errors::*;
 
 /// A callback which we be callled every time we have a new `T` value.
-pub type ProgressCallback<'a, T> = Fn(&T) -> Result<()> + 'a;
+pub type ProgressCallback<'a, T> = FnMut(&T) -> Result<()> + 'a;
 
 /// Options specifying how to report progress.
-#[derive(Clone)]
 pub struct ProgressOptions<'a, T: 'static> {
     /// Our callback value. Only accessible from inside this crate.
-    pub(crate) callback: Option<&'a ProgressCallback<'a, T>>,
+    pub(crate) callback: Option<&'a mut ProgressCallback<'a, T>>,
 }
 
 impl<'a, T: 'static> ProgressOptions<'a, T> {
     /// Specify a callback to be called whenever we see a new `T` value.
-    pub fn callback(mut self, callback: &'a ProgressCallback<'a, T>) -> Self {
+    pub fn callback(mut self, callback: &'a mut ProgressCallback<'a, T>) -> Self {
         self.callback = Some(callback);
         self
     }
