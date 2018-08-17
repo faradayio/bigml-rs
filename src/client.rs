@@ -179,25 +179,23 @@ impl Client {
         let url = self.url(resource.as_str());
         debug!("Waiting for {}", url_without_api_key(&url));
         wait(&wait_options, || {
-            let res = self.fetch(resource)?;
+            let res = try_with_temporary_failure!(self.fetch(resource));
             if let Some(ref mut callback) = progress_options.callback {
-                // We allow our progress callback to fail, but we currently
-                // treat that failure the same as a remote failure, which means
-                // that we'll retry it, which is probably not really what we
-                // want. But fixing this means adding more stuff to the `wait`
-                // API, making it less clear. Maybe someday.
-                callback(&res)?;
+                try_with_permanent_failure!(callback(&res));
             }
             if res.status().code().is_ready() {
-                Ok(WaitStatus::Finished(res))
+                WaitStatus::Finished(res)
             } else if res.status().code().is_err() {
                 let message = res.status().message();
-                Err(Error::WaitFailed {
+                let err = Error::WaitFailed {
                     id: resource.to_string(),
                     message: message.to_owned(),
-                })
+                };
+                // I think we always want to fail for good here? We may need to
+                // tweak this.
+                WaitStatus::FailedPermanently(err)
             } else {
-                Ok(WaitStatus::Waiting)
+                WaitStatus::Waiting
             }
         }).map_err(|e| Error::could_not_access_url(&url, e))
     }
@@ -223,8 +221,8 @@ impl Client {
         let url = self.url(&format!("{}/download", &resource));
         debug!("Downloading {}", url_without_api_key(&url));
         let client = reqwest::Client::new();
-        wait(&options, || {
-            let mut res = client.get(url.clone()).send()?;
+        wait(&options, || -> WaitStatus<_, Error> {
+            let mut res = try_with_temporary_failure!(client.get(url.clone()).send());
             if res.status().is_success() {
                 // Sometimes "/download" returns JSON instead of CSV, which
                 // is generally a sign that we need to wait.
@@ -232,14 +230,15 @@ impl Client {
                 if let Some(ct) = headers.get::<ContentType>() {
                     if ct.type_() == "application" && ct.subtype() == "json" {
                         let mut body = String::new();
-                        res.read_to_string(&mut body)?;
+                        try_with_temporary_failure!(res.read_to_string(&mut body));
                         debug!("Got JSON when downloading CSV: {}", body);
-                        return Ok(WaitStatus::Waiting);
+                        return WaitStatus::Waiting;
                     }
                 }
-                Ok(WaitStatus::Finished(res))
+                WaitStatus::Finished(res)
             } else {
-                self.response_to_err(res)
+                try_with_temporary_failure!(self.response_to_err(res));
+                unreachable!()
             }
         }).map_err(|e| Error::could_not_access_url(&url, e))
     }

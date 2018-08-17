@@ -68,17 +68,47 @@ impl Default for WaitOptions {
 }
 
 /// Return this value from a `wait` callback.
-pub enum WaitStatus<T> {
+pub enum WaitStatus<T, E> {
     /// The task has finished.
     Finished(T),
 
     /// The task hasn't finished yet, so wait a while and try again.
     Waiting,
+
+    /// The task has failed, but the failure is believed to be temporary.
+    FailedTemporarily(E),
+
+    /// The task has failed, and we don't believe that it will ever succeed.
+    FailedPermanently(E),
 }
 
-impl<T> From<T> for WaitStatus<T> {
-    fn from(value: T) -> Self {
-        WaitStatus::Finished(value)
+/// Try `e`, and if it fails, allow our `wait` function to be retried.
+#[macro_export]
+macro_rules! try_with_temporary_failure {
+    ($e:expr) => {
+        match $e {
+            Ok(v) => v,
+            Err(e) => return $crate::wait::WaitStatus::FailedTemporarily(e.into()),
+        }
+    };
+}
+
+/// Try `e`, and if it fails, do not allow our `wait` function to be retried.
+#[macro_export]
+macro_rules! try_with_permanent_failure {
+    ($e:expr) => {
+        match $e {
+            Ok(v) => v,
+            Err(e) => return $crate::wait::WaitStatus::FailedPermanently(e.into()),
+        }
+    };
+}
+
+impl<T, E> From<E> for WaitStatus<T, E> {
+    /// Convert automatically from errors to `WaitStatus::FailedTemporarily` to
+    /// make `?` convenient.
+    fn from(err: E) -> Self {
+        WaitStatus::FailedTemporarily(err)
     }
 }
 
@@ -107,7 +137,7 @@ pub fn wait<T, E, F>(
     mut f: F,
 ) -> result::Result<T, E>
 where
-    F: FnMut() -> result::Result<WaitStatus<T>, E>,
+    F: FnMut() -> WaitStatus<T, E>,
     E: Display,
     Error: Into<E>,
 {
@@ -123,9 +153,9 @@ where
 
         // Call the function we're waiting on.
         match f() {
-            Ok(WaitStatus::Finished(value)) => { return Ok(value); }
-            Ok(WaitStatus::Waiting) => {}
-            Err(ref e) if errors_seen < options.allowed_errors => {
+            WaitStatus::Finished(value) => { return Ok(value); }
+            WaitStatus::Waiting => {}
+            WaitStatus::FailedTemporarily(ref e) if errors_seen < options.allowed_errors => {
                 errors_seen += 1;
                 error!(
                     "Got error, will retry ({}/{}): {}",
@@ -134,7 +164,8 @@ where
                     e,
                 );
             }
-            Err(e) => { return Err(e); }
+            WaitStatus::FailedTemporarily(err) => { return Err(err); }
+            WaitStatus::FailedPermanently(err) => { return Err(err); }
         }
 
         // Sleep until our next call.

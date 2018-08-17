@@ -26,9 +26,10 @@ pub use errors::*;
 pub use progress::{ProgressCallback, ProgressOptions};
 pub use wait::WaitOptions;
 
+#[macro_use]
+pub mod wait;
 mod client;
 mod errors;
 mod multipart_form_data;
 mod progress;
 pub mod resource;
-pub mod wait;
