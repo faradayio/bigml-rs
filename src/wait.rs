@@ -62,7 +62,7 @@ impl Default for WaitOptions {
         Self {
             timeout: None,
             retry_interval: Duration::from_secs(10),
-            allowed_errors: 0,
+            allowed_errors: 2,
         }
     }
 }
