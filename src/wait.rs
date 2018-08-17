@@ -123,7 +123,7 @@ impl<T, E> From<E> for WaitStatus<T, E> {
 /// use failure::Error;
 ///
 /// let value = wait::<_, failure::Error, _>(&WaitOptions::default(), || {
-///     Ok(WaitStatus::Finished("my value"))
+///     WaitStatus::Finished("my value")
 /// }).expect("an error occured while waiting");
 ///
 /// assert_eq!(value, "my value");
