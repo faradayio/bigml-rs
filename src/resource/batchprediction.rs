@@ -14,7 +14,10 @@ pub struct BatchPrediction {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
     #[serde(flatten)]
-    pub common: ResourceCommon<BatchPrediction>,
+    pub common: ResourceCommon,
+
+    /// The ID of this resource.
+    pub resource: Id<BatchPrediction>,
 
     /// The status of this source.
     pub status: GenericStatus,

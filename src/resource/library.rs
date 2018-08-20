@@ -13,7 +13,10 @@ pub struct Library {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
     #[serde(flatten)]
-    pub common: ResourceCommon<Library>,
+    pub common: ResourceCommon,
+
+    /// The ID of this resource.
+    pub resource: Id<Library>,
 
     /// The current status of this execution.
     pub status: GenericStatus,

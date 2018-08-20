@@ -15,7 +15,10 @@ pub struct Ensemble {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
     #[serde(flatten)]
-    pub common: ResourceCommon<Ensemble>,
+    pub common: ResourceCommon,
+
+    /// The ID of this resource.
+    pub resource: Id<Ensemble>,
 
     /// The current status of this ensemble.
     pub status: GenericStatus,

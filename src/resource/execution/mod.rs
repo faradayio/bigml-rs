@@ -31,7 +31,10 @@ pub struct Execution {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
     #[serde(flatten)]
-    pub common: ResourceCommon<Execution>,
+    pub common: ResourceCommon,
+
+    /// The ID of this resource.
+    pub resource: Id<Execution>,
 
     /// The current status of this execution.
     pub status: ExecutionStatus,

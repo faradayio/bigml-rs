@@ -16,7 +16,10 @@ pub struct Dataset {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
     #[serde(flatten)]
-    pub common: ResourceCommon<Dataset>,
+    pub common: ResourceCommon,
+
+    /// The ID of this resource.
+    pub resource: Id<Dataset>,
 
     /// The current status of this execution.
     pub status: GenericStatus,

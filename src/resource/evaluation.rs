@@ -18,7 +18,10 @@ pub struct Evaluation<R: Result> {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
     #[serde(flatten)]
-    pub common: ResourceCommon<Evaluation<R>>,
+    pub common: ResourceCommon,
+
+    /// The ID of this resource.
+    pub resource: Id<Evaluation<R>>,
 
     /// The status of this resource.
     pub status: GenericStatus,

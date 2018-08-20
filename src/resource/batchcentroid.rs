@@ -13,7 +13,10 @@ pub struct BatchCentroid {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
     #[serde(flatten)]
-    pub common: ResourceCommon<BatchCentroid>,
+    pub common: ResourceCommon,
+
+    /// The ID of this resource.
+    pub resource: Id<BatchCentroid>,
 
     /// The status of this source.
     pub status: GenericStatus,

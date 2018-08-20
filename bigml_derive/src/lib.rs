@@ -38,8 +38,12 @@ fn resource_derive_impl(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
                 concat!("/", #api_name)
             }
 
+            fn common(&self) -> &ResourceCommon {
+                &self.common
+            }
+
             fn id(&self) -> &Id<Self> {
-                &self.common.resource
+                &self.resource
             }
 
             fn status(&self) -> &Status {

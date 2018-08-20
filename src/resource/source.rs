@@ -15,7 +15,10 @@ pub struct Source {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
     #[serde(flatten)]
-    pub common: ResourceCommon<Source>,
+    pub common: ResourceCommon,
+
+    /// The ID of this resource.
+    pub resource: Id<Source>,
 
     /// The status of this source.
     pub status: GenericStatus,

@@ -29,6 +29,10 @@ pub trait Resource: fmt::Debug + DeserializeOwned + Serialize + 'static {
     /// The URL path used to create a new resource of this type.
     fn create_path() -> &'static str;
 
+    /// Fields shared between all resource types. These are "flattened" into the
+    /// top-level of the JSON version of this resource.
+    fn common(&self) -> &ResourceCommon;
+
     /// The ID of this resource.
     fn id(&self) -> &Id<Self>;
 
@@ -49,7 +53,7 @@ pub trait Args: fmt::Debug + Serialize {
 /// all types which implement `Resource` using `#[serde(flatten)]`, giving us a
 /// sort of inheritence.
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ResourceCommon<R: Resource> {
+pub struct ResourceCommon {
     /// Used to classify by industry or category.  0 is "Miscellaneous".
     pub category: i64,
 
@@ -90,10 +94,6 @@ pub struct ResourceCommon<R: Resource> {
     //
     // TODO: The response is missing the `Z`, which makes chrono sad.
     //pub updated: DateTime<UTC>,
-
-    /// The ID of this execution.
-    #[serde(bound(deserialize = "R: DeserializeOwned"))]
-    pub resource: Id<R>,
 
     /// Having one hidden field makes it possible to extend this struct
     /// without breaking semver API guarantees.

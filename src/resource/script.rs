@@ -18,7 +18,10 @@ pub struct Script {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
     #[serde(flatten)]
-    pub common: ResourceCommon<Script>,
+    pub common: ResourceCommon,
+
+    /// The ID of this resource.
+    pub resource: Id<Script>,
 
     /// The status of this resource.
     pub status: GenericStatus,

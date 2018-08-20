@@ -15,7 +15,10 @@ pub struct Cluster {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
     #[serde(flatten)]
-    pub common: ResourceCommon<Cluster>,
+    pub common: ResourceCommon,
+
+    /// The ID of this resource.
+    pub resource: Id<Cluster>,
 
     /// The current status of this cluster.
     pub status: GenericStatus,
