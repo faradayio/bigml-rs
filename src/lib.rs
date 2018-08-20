@@ -5,6 +5,8 @@
 
 #![warn(missing_docs)]
 
+#[macro_use]
+extern crate bigml_derive;
 extern crate chrono;
 #[macro_use]
 extern crate failure;

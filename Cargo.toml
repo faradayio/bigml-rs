@@ -13,6 +13,7 @@ documentation = "https://docs.rs/bigml/"
 env_logger = "0.4"
 
 [dependencies]
+bigml_derive = { path = "bigml_derive" }
 chrono = { version = "0.4", features = ["serde"] }
 failure = "0.1.1"
 lazy_static = "0.2.2"

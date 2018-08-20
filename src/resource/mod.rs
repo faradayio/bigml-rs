@@ -64,6 +64,8 @@ macro_rules! resource {
 
     ) => {
         $(#[ $meta ])*
+        #[derive(Resource)]
+        #[api_name = $string_name]
         pub struct $name $(<$($Ty : $Tr),*>)* {
             // Start by declaring the fields which appear on every resource
             // type.  We should theoretically implement this using
@@ -128,24 +130,6 @@ macro_rules! resource {
                 $(#[ $field_type_meta ])*
                 pub $field_name: $field_ty
             ),*
-        }
-
-        impl $(<$($Ty : $Tr),*>)* Resource for $name $(<$($Ty),*>)* {
-            fn id_prefix() -> &'static str {
-                concat!($string_name, "/")
-            }
-
-            fn create_path() -> &'static str {
-                concat!("/", $string_name)
-            }
-
-            fn id(&self) -> &Id<Self> {
-                &self.resource
-            }
-
-            fn status(&self) -> &Status {
-                &self.status
-            }
         }
     };
 }
