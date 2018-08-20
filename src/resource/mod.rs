@@ -45,93 +45,60 @@ pub trait Args: fmt::Debug + Serialize {
     type Resource: Resource;
 }
 
-macro_rules! resource {
-    (
-        api_name $string_name:expr;
+/// Fields which are present on all resources. This struct is "flattened" into
+/// all types which implement `Resource` using `#[serde(flatten)]`, giving us a
+/// sort of inheritence.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ResourceCommon<R: Resource> {
+    /// Used to classify by industry or category.  0 is "Miscellaneous".
+    pub category: i64,
 
-        // The pattern `$(<$($Ty : $Tr),*>)*` is overly generous.  We want
-        // to match an optional set of type parameters of the form `<Name:
-        // Trait, ...>`, but Rust macros have no easy "match 0 or 1"
-        // mechanism, so we match 0 or more `<...>` patterns instead.
+    /// An HTTP status code, typically either 201 or 200.
+    ///
+    /// TODO: Deserialize as a `reqwest::StatusCode`?
+    pub code: u16,
 
-        $(#[ $meta:meta ])*
-        pub struct $name:ident $(<$($Ty:ident : $Tr:ident),*>)* {
-            $(
-                $(#[ $field_type_meta:meta ])*
-                pub $field_name:ident: $field_ty:ty,
-            )*
-        }
+    // The time this resource was created.
+    //
+    // TODO: The response is missing the `Z`, which makes chrono sad.
+    //pub created: DateTime<UTC>,
 
-    ) => {
-        $(#[ $meta ])*
-        #[derive(Resource)]
-        #[api_name = $string_name]
-        pub struct $name $(<$($Ty : $Tr),*>)* {
-            // Start by declaring the fields which appear on every resource
-            // type.  We should theoretically implement this using
-            // inheritance, but Rust doesn't have implementation
-            // inheritance.  We could also implement this using various
-            // other Rust patterns like delegation, but that would mean
-            // that serde could no longer assume a simple 1-to-1 mapping
-            // between Rust and JSON types. So we just use a macro to do
-            // some code gen, and we define a `Resource` trait that we can
-            // use to access any duplicated bits using a single API.
+    /// Was this created in development mode?
+    pub dev: Option<bool>,
 
-            /// Used to classify by industry or category.  0 is "Miscellaneous".
-            pub category: i64,
+    /// Text describing this resource.  May contain limited Markdown.
+    pub description: String,
 
-            /// An HTTP status code, typically either 201 or 200.
-            ///
-            /// TODO: Deserialize as a `reqwest::StatusCode`?
-            pub code: u16,
+    /// The name of this resource.
+    pub name: String,
 
-            // The time this resource was created.
-            //
-            // TODO: The response is missing the `Z`, which makes chrono sad.
-            //pub created: DateTime<UTC>,
+    // What project is this associated with?
+    //
+    // TODO: Define `Project` type and then enable this.
+    //pub project: Id<Project>,
 
-            /// Was this created in development mode?
-            pub dev: Option<bool>,
+    /// Has this been shared using a private link?
+    pub shared: bool,
 
-            /// Text describing this resource.  May contain limited Markdown.
-            pub description: String,
+    /// Was this created using a subscription plan?
+    pub subscription: bool,
 
-            /// The name of this resource.
-            pub name: String,
+    /// User-defined tags.
+    pub tags: Vec<String>,
 
-            // What project is this associated with?
-            //
-            // TODO: Define `Project` type and then enable this.
-            //pub project: Id<Project>,
+    // The last time this was updated.
+    //
+    // TODO: The response is missing the `Z`, which makes chrono sad.
+    //pub updated: DateTime<UTC>,
 
-            /// Has this been shared using a private link?
-            pub shared: bool,
+    /// The ID of this execution.
+    #[serde(bound(deserialize = "R: DeserializeOwned"))]
+    pub resource: Id<R>,
 
-            /// Was this created using a subscription plan?
-            pub subscription: bool,
-
-            /// User-defined tags.
-            pub tags: Vec<String>,
-
-            // The last time this was updated.
-            //
-            // TODO: The response is missing the `Z`, which makes chrono sad.
-            //pub updated: DateTime<UTC>,
-
-            /// The ID of this execution.
-            pub resource: Id<$name $(<$($Ty),*>)*>,
-
-            /// Having one hidden field makes it possible to extend this struct
-            /// without breaking semver API guarantees.
-             #[serde(default, skip_serializing)]
-            _hidden: (),
-
-            $(
-                $(#[ $field_type_meta ])*
-                pub $field_name: $field_ty
-            ),*
-        }
-    };
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+     #[serde(default, skip_serializing)]
+    _hidden: (),
 }
 
 // Support modules defining general types.

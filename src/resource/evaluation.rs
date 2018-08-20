@@ -4,25 +4,27 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::fmt;
 
-use super::Resource;
+use super::{Resource, ResourceCommon};
 use super::id::*;
 use super::status::*;
 
-resource! {
-    api_name "evaluation";
+/// An evaluation of how well a model (or ensemble) predicts the data.
+///
+/// TODO: Still lots of missing fields.
+#[derive(Clone, Debug, Deserialize, Resource, Serialize)]
+#[serde(bound(deserialize = ""))]
+#[api_name = "evaluation"]
+pub struct Evaluation<R: Result> {
+    /// Common resource information. These fields will be serialized at the
+    /// top-level of this structure by `serde`.
+    #[serde(flatten)]
+    pub common: ResourceCommon<Evaluation<R>>,
 
-    /// An evaluation of how well a model (or ensemble) predicts the data.
-    ///
-    /// TODO: Still lots of missing fields.
-    #[derive(Clone, Debug, Deserialize, Serialize)]
-    #[serde(bound(deserialize = ""))]
-    pub struct Evaluation<R: Result> {
-        /// The status of this resource.
-        pub status: GenericStatus,
+    /// The status of this resource.
+    pub status: GenericStatus,
 
-        /// The result of this evaluation.
-        pub result: R,
-    }
+    /// The result of this evaluation.
+    pub result: R,
 }
 
 /// The result of an evaluation.

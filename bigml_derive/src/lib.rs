@@ -39,7 +39,7 @@ fn resource_derive_impl(ast: &syn::DeriveInput) -> proc_macro2::TokenStream {
             }
 
             fn id(&self) -> &Id<Self> {
-                &self.resource
+                &self.common.resource
             }
 
             fn status(&self) -> &Status {

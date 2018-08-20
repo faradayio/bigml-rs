@@ -2,37 +2,39 @@
 
 use std::collections::HashMap;
 
-use super::Resource;
+use super::{Resource, ResourceCommon};
 use super::id::*;
 use super::status::*;
 
-resource! {
-    api_name "ensemble";
+/// An ensemble of multiple predictive models.
+///
+/// TODO: Still lots of missing fields.
+#[derive(Clone, Debug, Deserialize, Resource, Serialize)]
+#[api_name = "ensemble"]
+pub struct Ensemble {
+    /// Common resource information. These fields will be serialized at the
+    /// top-level of this structure by `serde`.
+    #[serde(flatten)]
+    pub common: ResourceCommon<Ensemble>,
 
-    /// An ensemble of multiple predictive models.
+    /// The current status of this ensemble.
+    pub status: GenericStatus,
+
+    /// Extra information about this ensemble. Does not appear to be
+    /// documented in the official API.
     ///
-    /// TODO: Still lots of missing fields.
-    #[derive(Clone, Debug, Deserialize, Serialize)]
-    pub struct Ensemble {
-        /// The current status of this ensemble.
-        pub status: GenericStatus,
+    /// TODO: This may need to be wrapped in `Option` to handle the early
+    /// stages of resource creation, when not all fields are present.
+    pub ensemble: EnsembleInfo,
 
-        /// Extra information about this ensemble. Does not appear to be
-        /// documented in the official API.
-        ///
-        /// TODO: This may need to be wrapped in `Option` to handle the early
-        /// stages of resource creation, when not all fields are present.
-        pub ensemble: EnsembleInfo,
+    /// Maps BigML field IDs to average importance per field.
+    ///
+    /// TODO: This may need to be wrapped in `Option` to handle the early
+    /// stages of resource creation, when not all fields are present.
+    pub importance: HashMap<String, f64>,
 
-        /// Maps BigML field IDs to average importance per field.
-        ///
-        /// TODO: This may need to be wrapped in `Option` to handle the early
-        /// stages of resource creation, when not all fields are present.
-        pub importance: HashMap<String, f64>,
-
-        // The dataset used to create this ensemble.
-        //pub dataset: Id<Dataset>,
-    }
+    // The dataset used to create this ensemble.
+    //pub dataset: Id<Dataset>,
 }
 
 /// Information about this ensemble.

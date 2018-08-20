@@ -1,6 +1,7 @@
 extern crate env_logger;
 extern crate bigml;
 
+use bigml::resource::Resource;
 use std::env;
 use std::io::{self, Write};
 use std::path::Path;
@@ -26,7 +27,7 @@ fn main() {
         .expect("can't create bigml::Client");
     let initial_response = client.create_source_from_path(&path)
         .expect("can't create source");
-    let response = client.wait(&initial_response.resource)
+    let response = client.wait(initial_response.id())
         .expect("error waiting for resource");
 
     println!("{:#?}", &response);

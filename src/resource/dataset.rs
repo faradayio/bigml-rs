@@ -4,37 +4,40 @@ use std::collections::HashMap;
 
 use super::id::*;
 use super::status::*;
-use super::Resource;
+use super::{Resource, ResourceCommon};
 use super::source::Field;
 
-resource! {
-    api_name "dataset";
+/// A BigML dataset. Basically a table of data with named columns.
+///
+/// TODO: Still lots of missing fields.
+#[derive(Clone, Debug, Deserialize, Resource, Serialize)]
+#[api_name = "common"]
+pub struct Dataset {
+    /// Common resource information. These fields will be serialized at the
+    /// top-level of this structure by `serde`.
+    #[serde(flatten)]
+    pub common: ResourceCommon<Dataset>,
 
-    /// A BigML dataset. Basically a table of data with named columns.
-    ///
-    /// TODO: Still lots of missing fields.
-    #[derive(Clone, Debug, Deserialize, Serialize)]
-    pub struct Dataset {
-        /// The current status of this execution.
-        pub status: GenericStatus,
+    /// The current status of this execution.
+    pub status: GenericStatus,
 
-        /// The number of columns in the dataset.
-        pub columns: usize,
+    /// The number of columns in the dataset.
+    pub columns: usize,
 
-        /// Field IDs excluded when building this dataset.
-        pub excluded_fields: Vec<String>,
+    /// Field IDs excluded when building this dataset.
+    pub excluded_fields: Vec<String>,
 
-        /// The number of fields of each type. This includes a few odd things
-        /// like "preferred", so we represent it as a string.
-        pub field_types: HashMap<String, u64>,
+    /// The number of fields of each type. This includes a few odd things
+    /// like "preferred", so we represent it as a string.
+    pub field_types: HashMap<String, u64>,
 
-        /// Metadata describing each field.
-        pub fields: HashMap<String, Field>,
+    /// Metadata describing each field.
+    pub fields: HashMap<String, Field>,
 
-        /// Field IDs included when building this dataset.
-        pub input_fields: Vec<String>,
+    /// Field IDs included when building this dataset.
+    pub input_fields: Vec<String>,
 
-        /// The number of rows in this dataset.
-        pub rows: usize,
-    }
+    /// The number of rows in this dataset.
+    pub rows: usize,
 }
+

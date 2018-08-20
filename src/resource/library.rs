@@ -2,22 +2,24 @@
 
 use super::id::*;
 use super::status::*;
-use super::Resource;
+use super::{Resource, ResourceCommon};
 
-resource! {
-    api_name "library";
+/// A BigML library for use in a WhizzML script.
+///
+/// TODO: Still lots of missing fields.
+#[derive(Clone, Debug, Deserialize, Resource, Serialize)]
+#[api_name = "library"]
+pub struct Library {
+    /// Common resource information. These fields will be serialized at the
+    /// top-level of this structure by `serde`.
+    #[serde(flatten)]
+    pub common: ResourceCommon<Library>,
 
-    /// A BigML library for use in a WhizzML script.
-    ///
-    /// TODO: Still lots of missing fields.
-    #[derive(Clone, Debug, Deserialize, Serialize)]
-    pub struct Library {
-        /// The current status of this execution.
-        pub status: GenericStatus,
+    /// The current status of this execution.
+    pub status: GenericStatus,
 
-        /// The source code of this library.
-        pub source_code: String,
-    }
+    /// The source code of this library.
+    pub source_code: String,
 }
 
 /// Arguments used to create a new BigML script.
