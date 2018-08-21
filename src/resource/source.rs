@@ -34,15 +34,17 @@ pub struct Source {
     pub size: u64,
 
     /// The fields in this source, keyed by BigML internal ID.
+    #[updatable]
     pub fields: Option<HashMap<String, Field>>,
 }
 
 /// Information about a field in a data source.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Updatable)]
 pub struct Field {
     /// The name of this field.
     pub name: String,
     /// The type of data stored in this field.
+    #[updatable]
     pub optype: Optype,
     // The locale of this field.
     //pub locale: Option<String>,
@@ -51,7 +53,7 @@ pub struct Field {
 }
 
 /// The type of a data field.
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub enum Optype {
     /// Treat this as a numeric value.
     #[serde(rename="numeric")]
@@ -68,4 +70,8 @@ pub enum Optype {
     /// separator.
     #[serde(rename="items")]
     Items,
+}
+
+impl Updatable for Optype {
+    type Update = Self;
 }

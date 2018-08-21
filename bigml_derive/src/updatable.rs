@@ -39,6 +39,7 @@ fn fields_for_update_type(ast: &DeriveInput) -> Vec<TokenStream> {
     if let Data::Struct(ref data_struct) = ast.data {
         for field in &data_struct.fields {
             if field_is_updatable(field) {
+                let vis = &field.vis;
                 let name = field.ident.as_ref()
                     .expect("Cannot `#[derive(Updatable)]` for tuple struct");
                 let ty = &field.ty;
@@ -46,7 +47,7 @@ fn fields_for_update_type(ast: &DeriveInput) -> Vec<TokenStream> {
                 new_fields.push(quote! {
                     #[doc = #comment]
                     #[serde(skip_serializing_if="Option::is_none")]
-                    #name: Option<<#ty as Updatable>::Update>,
+                    #vis #name: Option<<#ty as Updatable>::Update>,
                 });
             }
         }
