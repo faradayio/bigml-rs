@@ -6,6 +6,7 @@ use std::fmt;
 use std::marker::PhantomData;
 use std::result;
 use std::str::FromStr;
+use url::Url;
 
 use errors::*;
 use super::Resource;
@@ -26,6 +27,13 @@ impl<R: Resource> Id<R> {
     /// Get this resource as a string.
     pub fn as_str(&self) -> &str {
         &self.id
+    }
+
+    /// Get a URL pointing at the human-readable version of this resource.
+    pub fn dashboard_url(&self) -> Url {
+        Url::parse(&format!("https://bigml.com/dashboard/{}", self))
+                    // This should never fail to parse.
+                    .expect("dashboard URL unexpectedly failed to parse")
     }
 }
 

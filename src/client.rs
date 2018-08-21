@@ -4,9 +4,7 @@ use reqwest;
 use reqwest::header::ContentType;
 use serde::de::DeserializeOwned;
 use serde_json;
-use std::collections::HashMap;
 use std::io::Read;
-use std::iter::FromIterator;
 use std::path::Path;
 use std::time::Duration;
 use url::Url;
@@ -14,7 +12,7 @@ use url::Url;
 use errors::*;
 use multipart_form_data;
 use progress::ProgressOptions;
-use resource::{self, Id, Resource, Source, source};
+use resource::{self, Id, Resource, Source, Updatable};
 use wait::{wait, WaitOptions, WaitStatus};
 
 lazy_static! {
@@ -107,49 +105,28 @@ impl Client {
         self.wait(source.id())
     }
 
-    /// When a `source` is initially created, a few of the field types may
-    /// have been guessed incorrectly, which means that we need to update
-    /// them (which is rare in the BigML API).  To update the field types,
-    /// update them in the `source` object and then pass it to this
-    /// function.
-    ///
-    /// TODO: This is a terrible API and it will go away sometime soon.  We
-    /// need a much more general solution for this, or perhaps a nice,
-    /// special-purpose API with good ergonomics.
-    #[doc(hidden)]
-    pub fn update_source_fields(&self, source: &Source) -> Result<()> {
-        if let Some(ref fields) = source.fields {
-            #[derive(Debug, Serialize)]
-            struct FieldDiff {
-                optype: source::Optype,
-            }
-
-            #[derive(Debug, Serialize)]
-            struct SourceUpdate {
-                fields: HashMap<String, FieldDiff>,
-            }
-
-            let body = SourceUpdate {
-                fields: HashMap::from_iter(fields.iter().map(|(id, field)| {
-                    (id.clone(), FieldDiff { optype: field.optype })
-                }))
-            };
-
-            let url = self.url(source.id().as_str());
-            debug!("PUT {}: {:?}", &url, &body);
+    /// Update the specified `resource` using `update`. We do not return the
+    /// updated resource because of peculiarities with BigML's API, but you
+    /// can always use `Client::fetch` if you need the updated version.
+    pub fn update<R: Resource + Updatable>(
+        &self,
+        resource: &Id<R>,
+        update: &<R as Updatable>::Update,
+    ) -> Result<()> {
+            let url = self.url(resource.as_str());
+            debug!("PUT {}: {:?}", url, update);
             let client = reqwest::Client::new();
             let res = client.request(reqwest::Method::Put, url.clone())
-                .json(&body)
+                .json(update)
                 .send()
                 .map_err(|e| Error::could_not_access_url(&url, e))?;
             // Parse our result as JSON, because it often seems to be missing
-            // fields like `name`.
+            // fields like `name` for `Source`. It's not always a complete,
+            // valid resource.
             let _json: serde_json::Value = self.handle_response(res)
                 .map_err(|e| Error::could_not_access_url(&url, e))?;
-            Ok(())
-        } else {
-            Err(format_err!("No fields to update in {}", source.id()).into())
-        }
+
+        Ok(())
     }
 
     /// Fetch an existing resource.

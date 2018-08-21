@@ -13,7 +13,7 @@ use client::Client;
 use errors::*;
 use super::id::*;
 use super::status::*;
-use super::Resource;
+use super::{Resource, ResourceCommon};
 use super::{Library, Script};
 
 mod args;
@@ -22,20 +22,25 @@ mod execution_status;
 pub use self::args::*;
 pub use self::execution_status::*;
 
-resource! {
-    api_name "execution";
+/// An execution of a WhizzML script.
+///
+/// TODO: Still lots of missing fields.
+#[derive(Clone, Debug, Deserialize, Resource, Serialize)]
+#[api_name = "execution"]
+pub struct Execution {
+    /// Common resource information. These fields will be serialized at the
+    /// top-level of this structure by `serde`.
+    #[serde(flatten)]
+    pub common: ResourceCommon,
 
-    /// An execution of a WhizzML script.
-    ///
-    /// TODO: Still lots of missing fields.
-    #[derive(Clone, Debug, Deserialize, Serialize)]
-    pub struct Execution {
-        /// The current status of this execution.
-        pub status: ExecutionStatus,
+    /// The ID of this resource.
+    pub resource: Id<Execution>,
 
-        /// Further information about this execution.
-        pub execution: Data,
-    }
+    /// The current status of this execution.
+    pub status: ExecutionStatus,
+
+    /// Further information about this execution.
+    pub execution: Data,
 }
 
 /// Data about a script execution.
@@ -147,13 +152,10 @@ pub enum SourceId {
 impl SourceId {
     /// Build a URL pointing to the BigML dashboard view for this script.
     pub fn dashboard_url(&self) -> Url {
-        let id_str = match self {
-            SourceId::Library(id) => id.as_str(),
-            SourceId::Script(id) => id.as_str(),
-        };
-        Url::parse(&format!("https://bigml.com/dashboard/{}", id_str))
-            // This should never fail to parse.
-            .expect("dashboard URL unexpectedly failed to parse")
+        match self {
+            SourceId::Library(id) => id.dashboard_url(),
+            SourceId::Script(id) => id.dashboard_url(),
+        }
     }
 
     /// Download the corresponding source code.

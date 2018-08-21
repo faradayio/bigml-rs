@@ -13,14 +13,15 @@ documentation = "https://docs.rs/bigml/"
 env_logger = "0.4"
 
 [dependencies]
+bigml_derive = { path = "bigml_derive" }
 chrono = { version = "0.4", features = ["serde"] }
 failure = "0.1.1"
 lazy_static = "0.2.2"
 log = "0.3.6"
 mime = "0.3"
 reqwest = "0.8"
-serde = "1.0"
-serde_derive = "1.0"
+serde = "1.0.72"
+serde_derive = "1.0.72"
 serde_json = "1.0"
 url = "1.2.3"
 uuid = { version = ">=0.5.0, <0.7.0", features = ["v4"] }

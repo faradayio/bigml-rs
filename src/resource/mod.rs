@@ -2,7 +2,7 @@
 
 use serde::Serialize;
 use serde::de::DeserializeOwned;
-use std::fmt;
+use std::{collections::HashMap, fmt};
 
 // We re-export everything from our support submodules.
 pub use self::id::*;
@@ -22,12 +22,47 @@ pub use self::script::Script;
 pub use self::source::Source;
 
 /// A shared interface to all BigML resource types.
+///
+/// ### Implementing `Resource` (internal only)
+///
+/// Normally you want to implement this using `#[derive(Resource)]`, which will
+/// look something like:
+///
+/// ```
+/// # #[macro_use] extern crate bigml_derive;
+/// # extern crate bigml;
+/// # #[macro_use] extern crate serde_derive;
+/// # use bigml::resource::{GenericStatus, Id, Resource, ResourceCommon, Status, Updatable};
+/// #[derive(Clone, Debug, Deserialize, Resource, Serialize, Updatable)]
+/// #[api_name = "exampleresource"]
+/// pub struct ExampleResource {
+///     /// Common resource information. These fields will be serialized at the
+///     /// top-level of this structure by `serde`.
+///     #[serde(flatten)]
+///     #[updatable]
+///     pub common: ResourceCommon,
+///
+///     /// The ID of this resource.
+///     pub resource: Id<ExampleResource>,
+///
+///     /// The status of this resource. (Must be a type which implements
+///     /// `Status`, normally `GenericStatus` for most resources, except those
+///     /// with extended status data.)
+///     pub status: GenericStatus,
+///
+///     // Resource-specific fields here.
+/// }
+/// ```
 pub trait Resource: fmt::Debug + DeserializeOwned + Serialize + 'static {
     /// The prefix used for all IDs of this type.
     fn id_prefix() -> &'static str;
 
     /// The URL path used to create a new resource of this type.
     fn create_path() -> &'static str;
+
+    /// Fields shared between all resource types. These are "flattened" into the
+    /// top-level of the JSON version of this resource.
+    fn common(&self) -> &ResourceCommon;
 
     /// The ID of this resource.
     fn id(&self) -> &Id<Self>;
@@ -39,115 +74,111 @@ pub trait Resource: fmt::Debug + DeserializeOwned + Serialize + 'static {
     fn status(&self) -> &Status;
 }
 
+/// A value which can be updated using the BigML API. May be a `Resource` or a
+/// piece of data contained in `Resource`. This is normally passed to
+/// `Client::update`.
+///
+/// ### Implementing `Updatable` (internal only)
+///
+/// For primitive types like `String` or `bool`, you should add them to the
+/// `primitive_updatable_types!` macro, which will define `type Update = self`.
+/// You can also do this manually for simple `enum` types, and other values
+/// which can only be updated as a whole.
+///
+/// For struct types, you should use `#[derive(Updatable)]` and mark updatable
+/// fields with `#[updatable]`. For a struct `Foo`, this will generate a
+/// corresponding `FooUpdate` type, containing only those fields marked as
+/// `#[updatable]` (with appropriate types).
+pub trait Updatable {
+    /// The type of the data used to update this value.
+    type Update: Serialize + fmt::Debug;
+}
+
+/// Primitive types are updated using plain values of the same type.
+macro_rules! primitive_updatable_types {
+    ( $( $ty:ty ),* ) => {
+        $(
+            impl Updatable for $ty {
+                type Update = Self;
+            }
+        )*
+    };
+}
+
+primitive_updatable_types!(bool, i64, String, u16);
+
+/// `HashMap<String, T>` can be updated using `HashMap<String, T::Update>`.
+impl<T: Updatable> Updatable for HashMap<String, T> {
+    type Update = HashMap<String, <T as Updatable>::Update>;
+}
+
+/// `Option<T>` can be updated using `Option<T::Update>`.
+impl<T: Updatable> Updatable for Option<T> {
+    type Update = Option<<T as Updatable>::Update>;
+}
+
+/// `Vec<T>` can be updated using `Vec<T::Update>`.
+impl<T: Updatable> Updatable for Vec<T> {
+    type Update = Vec<<T as Updatable>::Update>;
+}
+
 /// Arguments which can be used to create a resource.
 pub trait Args: fmt::Debug + Serialize {
     /// The resource type these arguments create.
     type Resource: Resource;
 }
 
-macro_rules! resource {
-    (
-        api_name $string_name:expr;
+/// Fields which are present on all resources. This struct is "flattened" into
+/// all types which implement `Resource` using `#[serde(flatten)]`, giving us a
+/// sort of inheritence.
+#[derive(Clone, Debug, Deserialize, Serialize, Updatable)]
+pub struct ResourceCommon {
+    /// Used to classify by industry or category.  0 is "Miscellaneous".
+    pub category: i64,
 
-        // The pattern `$(<$($Ty : $Tr),*>)*` is overly generous.  We want
-        // to match an optional set of type parameters of the form `<Name:
-        // Trait, ...>`, but Rust macros have no easy "match 0 or 1"
-        // mechanism, so we match 0 or more `<...>` patterns instead.
+    /// An HTTP status code, typically either 201 or 200.
+    ///
+    /// TODO: Deserialize as a `reqwest::StatusCode`?
+    pub code: u16,
 
-        $(#[ $meta:meta ])*
-        pub struct $name:ident $(<$($Ty:ident : $Tr:ident),*>)* {
-            $(
-                $(#[ $field_type_meta:meta ])*
-                pub $field_name:ident: $field_ty:ty,
-            )*
-        }
+    // The time this resource was created.
+    //
+    // TODO: The response is missing the `Z`, which makes chrono sad.
+    //pub created: DateTime<UTC>,
 
-    ) => {
-        $(#[ $meta ])*
-        pub struct $name $(<$($Ty : $Tr),*>)* {
-            // Start by declaring the fields which appear on every resource
-            // type.  We should theoretically implement this using
-            // inheritance, but Rust doesn't have implementation
-            // inheritance.  We could also implement this using various
-            // other Rust patterns like delegation, but that would mean
-            // that serde could no longer assume a simple 1-to-1 mapping
-            // between Rust and JSON types. So we just use a macro to do
-            // some code gen, and we define a `Resource` trait that we can
-            // use to access any duplicated bits using a single API.
+    /// Was this created in development mode?
+    pub dev: Option<bool>,
 
-            /// Used to classify by industry or category.  0 is "Miscellaneous".
-            pub category: i64,
+    /// Text describing this resource.  May contain limited Markdown.
+    pub description: String,
 
-            /// An HTTP status code, typically either 201 or 200.
-            ///
-            /// TODO: Deserialize as a `reqwest::StatusCode`?
-            pub code: u16,
+    /// The name of this resource.
+    #[updatable]
+    pub name: String,
 
-            // The time this resource was created.
-            //
-            // TODO: The response is missing the `Z`, which makes chrono sad.
-            //pub created: DateTime<UTC>,
+    // What project is this associated with?
+    //
+    // TODO: Define `Project` type and then enable this.
+    //pub project: Id<Project>,
 
-            /// Was this created in development mode?
-            pub dev: Option<bool>,
+    /// Has this been shared using a private link?
+    pub shared: bool,
 
-            /// Text describing this resource.  May contain limited Markdown.
-            pub description: String,
+    /// Was this created using a subscription plan?
+    pub subscription: bool,
 
-            /// The name of this resource.
-            pub name: String,
+    /// User-defined tags.
+    pub tags: Vec<String>,
 
-            // What project is this associated with?
-            //
-            // TODO: Define `Project` type and then enable this.
-            //pub project: Id<Project>,
+    // The last time this was updated.
+    //
+    // TODO: The response is missing the `Z`, which makes chrono sad.
+    //pub updated: DateTime<UTC>,
 
-            /// Has this been shared using a private link?
-            pub shared: bool,
-
-            /// Was this created using a subscription plan?
-            pub subscription: bool,
-
-            /// User-defined tags.
-            pub tags: Vec<String>,
-
-            // The last time this was updated.
-            //
-            // TODO: The response is missing the `Z`, which makes chrono sad.
-            //pub updated: DateTime<UTC>,
-
-            /// The ID of this execution.
-            pub resource: Id<$name $(<$($Ty),*>)*>,
-
-            /// Having one hidden field makes it possible to extend this struct
-            /// without breaking semver API guarantees.
-             #[serde(default, skip_serializing)]
-            _hidden: (),
-
-            $(
-                $(#[ $field_type_meta ])*
-                pub $field_name: $field_ty
-            ),*
-        }
-
-        impl $(<$($Ty : $Tr),*>)* Resource for $name $(<$($Ty),*>)* {
-            fn id_prefix() -> &'static str {
-                concat!($string_name, "/")
-            }
-
-            fn create_path() -> &'static str {
-                concat!("/", $string_name)
-            }
-
-            fn id(&self) -> &Id<Self> {
-                &self.resource
-            }
-
-            fn status(&self) -> &Status {
-                &self.status
-            }
-        }
-    };
+    /// Having one hidden field makes it possible to extend this struct
+    /// without breaking semver API guarantees.
+     #[serde(default, skip_serializing)]
+    _hidden: (),
 }
 
 // Support modules defining general types.

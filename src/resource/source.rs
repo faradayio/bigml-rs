@@ -2,41 +2,49 @@
 
 use std::collections::HashMap;
 
-use super::Resource;
+use super::{Resource, ResourceCommon, Updatable};
 use super::id::*;
 use super::status::*;
 
-resource! {
-    api_name "source";
+/// A data source used by BigML.
+///
+/// TODO: Still lots of missing fields.
+#[derive(Clone, Debug, Deserialize, Resource, Serialize, Updatable)]
+#[api_name = "source"]
+pub struct Source {
+    /// Common resource information. These fields will be serialized at the
+    /// top-level of this structure by `serde`.
+    #[serde(flatten)]
+    #[updatable]
+    pub common: ResourceCommon,
 
-    /// A data source used by BigML.
-    ///
-    /// TODO: Still lots of missing fields.
-    #[derive(Clone, Debug, Deserialize, Serialize)]
-    pub struct Source {
-        /// The status of this source.
-        pub status: GenericStatus,
+    /// The ID of this resource.
+    pub resource: Id<Source>,
 
-        /// The name of the file uploaded.
-        pub file_name: String,
+    /// The status of this source.
+    pub status: GenericStatus,
 
-        /// An MD5 hash of the uploaded file.
-        pub md5: String,
+    /// The name of the file uploaded.
+    pub file_name: String,
 
-        /// The number of bytes of the source.
-        pub size: u64,
+    /// An MD5 hash of the uploaded file.
+    pub md5: String,
 
-        /// The fields in this source, keyed by BigML internal ID.
-        pub fields: Option<HashMap<String, Field>>,
-    }
+    /// The number of bytes of the source.
+    pub size: u64,
+
+    /// The fields in this source, keyed by BigML internal ID.
+    #[updatable]
+    pub fields: Option<HashMap<String, Field>>,
 }
 
 /// Information about a field in a data source.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Updatable)]
 pub struct Field {
     /// The name of this field.
     pub name: String,
     /// The type of data stored in this field.
+    #[updatable]
     pub optype: Optype,
     // The locale of this field.
     //pub locale: Option<String>,
@@ -45,7 +53,7 @@ pub struct Field {
 }
 
 /// The type of a data field.
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub enum Optype {
     /// Treat this as a numeric value.
     #[serde(rename="numeric")]
@@ -62,4 +70,8 @@ pub enum Optype {
     /// separator.
     #[serde(rename="items")]
     Items,
+}
+
+impl Updatable for Optype {
+    type Update = Self;
 }
