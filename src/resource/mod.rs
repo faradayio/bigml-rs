@@ -39,7 +39,7 @@ pub use self::source::Source;
 ///     /// Common resource information. These fields will be serialized at the
 ///     /// top-level of this structure by `serde`.
 ///     #[serde(flatten)]
-///     #[updatable]
+///     #[updatable(flatten)]
 ///     pub common: ResourceCommon,
 ///
 ///     /// The ID of this resource.

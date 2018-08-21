@@ -15,7 +15,7 @@ pub struct Source {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
     #[serde(flatten)]
-    #[updatable]
+    #[updatable(flatten)]
     pub common: ResourceCommon,
 
     /// The ID of this resource.
@@ -74,4 +74,17 @@ pub enum Optype {
 
 impl Updatable for Optype {
     type Update = Self;
+}
+
+#[test]
+fn update_source_name() {
+    use super::ResourceCommonUpdate;
+    let source_update = SourceUpdate {
+        common: Some(ResourceCommonUpdate{
+            name: Some("example".to_owned()),
+            .. ResourceCommonUpdate::default()
+        }),
+        .. SourceUpdate::default()
+    };
+    assert_eq!(json!(source_update), json!({ "name": "example" }));
 }
