@@ -1,3 +1,7 @@
+//! Implementation of `#[derive(Resource)]`.
+
+// In this macro, we want `proc_macro2::TokenStream` to manipulate the AST using
+// high-level APIs.
 use proc_macro2::TokenStream;
 use syn::{Attribute, DeriveInput, Lit, Meta, MetaNameValue};
 

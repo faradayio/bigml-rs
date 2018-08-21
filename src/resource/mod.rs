@@ -43,6 +43,13 @@ pub trait Resource: fmt::Debug + DeserializeOwned + Serialize + 'static {
     fn status(&self) -> &Status;
 }
 
+/// A value which can be updated using the BigML API. May be a `Resource` or a
+/// small piece of a `Resource`.
+pub trait Updatable {
+    /// The type of the data used to update this value.
+    type Update: Serialize;
+}
+
 /// Arguments which can be used to create a resource.
 pub trait Args: fmt::Debug + Serialize {
     /// The resource type these arguments create.

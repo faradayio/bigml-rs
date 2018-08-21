@@ -2,14 +2,14 @@
 
 use std::collections::HashMap;
 
-use super::{Resource, ResourceCommon};
+use super::{Resource, ResourceCommon, Updatable};
 use super::id::*;
 use super::status::*;
 
 /// A data source used by BigML.
 ///
 /// TODO: Still lots of missing fields.
-#[derive(Clone, Debug, Deserialize, Resource, Serialize)]
+#[derive(Clone, Debug, Deserialize, Resource, Serialize, Updatable)]
 #[api_name = "source"]
 pub struct Source {
     /// Common resource information. These fields will be serialized at the
