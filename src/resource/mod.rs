@@ -47,7 +47,11 @@ pub trait Resource: fmt::Debug + DeserializeOwned + Serialize + 'static {
 /// small piece of a `Resource`.
 pub trait Updatable {
     /// The type of the data used to update this value.
-    type Update: Serialize;
+    type Update: Serialize + fmt::Debug;
+}
+
+impl Updatable for String {
+    type Update = String;
 }
 
 /// Arguments which can be used to create a resource.
@@ -59,7 +63,7 @@ pub trait Args: fmt::Debug + Serialize {
 /// Fields which are present on all resources. This struct is "flattened" into
 /// all types which implement `Resource` using `#[serde(flatten)]`, giving us a
 /// sort of inheritence.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Updatable)]
 pub struct ResourceCommon {
     /// Used to classify by industry or category.  0 is "Miscellaneous".
     pub category: i64,
@@ -81,6 +85,7 @@ pub struct ResourceCommon {
     pub description: String,
 
     /// The name of this resource.
+    #[updatable]
     pub name: String,
 
     // What project is this associated with?

@@ -14,7 +14,7 @@ use url::Url;
 use errors::*;
 use multipart_form_data;
 use progress::ProgressOptions;
-use resource::{self, Id, Resource, Source, source};
+use resource::{self, Id, Resource, Source, source, Updatable};
 use wait::{wait, WaitOptions, WaitStatus};
 
 lazy_static! {
@@ -105,6 +105,27 @@ impl Client {
     {
         let source = self.create_source_from_path(path)?;
         self.wait(source.id())
+    }
+
+    /// Update the specified resource
+    pub fn update<R: Resource + Updatable>(
+        &self,
+        resource: &Id<R>,
+        update: &<R as Updatable>::Update,
+    ) -> Result<()> {
+            let url = self.url(resource.as_str());
+            debug!("PUT {}: {:?}", url, update);
+            let client = reqwest::Client::new();
+            let res = client.request(reqwest::Method::Put, url.clone())
+                .json(update)
+                .send()
+                .map_err(|e| Error::could_not_access_url(&url, e))?;
+            // Parse our result as JSON, because it often seems to be missing
+            // fields like `name`.
+            let _json: serde_json::Value = self.handle_response(res)
+                .map_err(|e| Error::could_not_access_url(&url, e))?;
+
+        Ok(())
     }
 
     /// When a `source` is initially created, a few of the field types may
