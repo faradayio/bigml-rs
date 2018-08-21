@@ -26,7 +26,8 @@ pub(crate) fn derive(ast: &DeriveInput) -> TokenStream {
             /// API. Pleae replace this with `#[non_exhaustive]` when it becomes
             /// stable.
             #[serde(skip)]
-            _placeholder: (),
+            #[doc(hidden)]
+            pub _placeholder: (),
         }
     }
 }
