@@ -28,6 +28,10 @@ pub struct Evaluation<R: Result> {
 
     /// The result of this evaluation.
     pub result: R,
+
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 /// The result of an evaluation.
@@ -54,10 +58,9 @@ pub struct ClassificationResult {
     /// that predicts a random class for all the instances in the dataset."
     pub random: DetailedClassificationResult,
 
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 impl Result for ClassificationResult {}
@@ -79,10 +82,9 @@ pub struct DetailedClassificationResult {
     pub confusion_matrix: Vec<Vec<f64>>,
     /// Statistics for each of the individidual classes.
     pub per_class_statistics: Vec<ClassificationPerClassStatistics>,
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 /// The detailed result of an evaluation using specific criteria.
@@ -103,6 +105,9 @@ pub struct ClassificationPerClassStatistics {
     /// The number of true positives over the number of actual positives in
     /// the dataset. (TP / (TP + FN))
     pub recall: f64,
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 // TODO: RegressionResult.

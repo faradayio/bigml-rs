@@ -34,10 +34,9 @@ pub struct Args {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
 
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 impl Args {
@@ -79,9 +78,8 @@ pub struct Output {
     /// The type of this output, or `None` if we don't know the type.
     pub type_: Option<String>,
 
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    _placeholder: (),
 }
 
 impl Output {
@@ -124,7 +122,7 @@ impl<'de> Deserialize<'de> for Output {
                     name: v.to_owned(),
                     value: None,
                     type_: None,
-                    _hidden: (),
+                    _placeholder: (),
                 })
             }
 
@@ -145,7 +143,7 @@ impl<'de> Deserialize<'de> for Output {
                     name: name,
                     value: Some(value),
                     type_: if type_ == "" { None } else { Some(type_) },
-                    _hidden: (),
+                    _placeholder: (),
                 })
             }
         }
@@ -249,6 +247,8 @@ pub struct LogEntry {
     pub line_number: u64,
     /// The log message.
     pub message: String,
+    /// Placeholder to allow extensibility without breaking the API.
+    _placeholder: (),
 }
 
 impl<'de> Deserialize<'de> for LogEntry {
@@ -289,6 +289,7 @@ impl<'de> Deserialize<'de> for LogEntry {
                     source_index,
                     line_number,
                     message,
+                    _placeholder: (),
                 })
             }
         }
@@ -347,7 +348,7 @@ pub struct OutputResource {
     /// This appears to be a textual representation of a `StatusCode`.
     pub state: String,
 
-    /// For extensibility.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }

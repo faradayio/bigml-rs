@@ -36,6 +36,10 @@ pub struct Source {
     /// The fields in this source, keyed by BigML internal ID.
     #[updatable]
     pub fields: Option<HashMap<String, Field>>,
+
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 /// Information about a field in a data source.
@@ -43,13 +47,20 @@ pub struct Source {
 pub struct Field {
     /// The name of this field.
     pub name: String,
+
     /// The type of data stored in this field.
     #[updatable]
     pub optype: Optype,
+
     // The locale of this field.
     //pub locale: Option<String>,
+
     // (This is not well-documented in the BigML API.)
     //pub missing_tokens: Option<Vec<String>>,
+
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 /// The type of a data field.

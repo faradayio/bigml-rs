@@ -42,5 +42,9 @@ pub struct Dataset {
 
     /// The number of rows in this dataset.
     pub rows: usize,
+
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 

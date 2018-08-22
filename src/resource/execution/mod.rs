@@ -41,6 +41,10 @@ pub struct Execution {
 
     /// Further information about this execution.
     pub execution: Data,
+
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 /// Data about a script execution.
@@ -68,10 +72,9 @@ pub struct Data {
     #[serde(default)]
     pub sources: Vec<Source>,
 
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 impl Data {
@@ -93,6 +96,8 @@ pub struct Source {
     pub id: SourceId,
     /// The description associated with this source.
     pub description: String,
+    /// Placeholder to allow extensibility without breaking the API.
+    _placeholder: (),
 }
 
 impl<'de> Deserialize<'de> for Source {
@@ -121,7 +126,7 @@ impl<'de> Deserialize<'de> for Source {
                 let description = visitor.next_element()?
                     .ok_or_else(|| V::Error::custom("no description field in source"))?;
 
-                Ok(Source { id, description })
+                Ok(Source { id, description, _placeholder: () })
             }
         }
 

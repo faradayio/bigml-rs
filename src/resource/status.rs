@@ -123,10 +123,9 @@ pub struct GenericStatus {
     /// this resource.
     pub progress: Option<f32>,
 
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 impl Status for GenericStatus {

@@ -30,4 +30,8 @@ pub struct Cluster {
 
     // The dataset used to create this cluster.
     //pub dataset: Id<Dataset>,
+
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }

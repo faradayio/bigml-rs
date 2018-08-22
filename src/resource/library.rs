@@ -23,6 +23,10 @@ pub struct Library {
 
     /// The source code of this library.
     pub source_code: String,
+
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 /// Arguments used to create a new BigML script.
@@ -51,10 +55,9 @@ pub struct Args {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
 
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 impl Args {
@@ -67,7 +70,7 @@ impl Args {
             name: Default::default(),
             source_code: source_code.into(),
             tags: Default::default(),
-            _hidden: (),
+            _placeholder: (),
         }
     }
 }

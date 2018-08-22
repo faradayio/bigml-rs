@@ -29,5 +29,9 @@ pub struct BatchCentroid {
 
     /// Is our output dataset currently available?
     pub output_dataset_status: bool,
+
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 

@@ -38,6 +38,10 @@ pub struct Ensemble {
 
     // The dataset used to create this ensemble.
     //pub dataset: Id<Dataset>,
+
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 /// Information about this ensemble.
@@ -46,10 +50,9 @@ pub struct EnsembleInfo {
     /// Information about this ensemble's fields. Keyed by BigML field ID.
     pub fields: HashMap<String, EnsembleField>,
 
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 /// List of field codes mapped to input fields
@@ -58,8 +61,7 @@ pub struct EnsembleField {
     /// The original name of this field (not the BigML field ID).
     pub name: String,
 
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }

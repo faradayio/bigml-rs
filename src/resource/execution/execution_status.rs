@@ -43,10 +43,9 @@ pub struct ExecutionStatus {
     /// particularly useful when an error occurs.
     pub source_location: Option<SourceLocation>,
 
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 impl ExecutionStatus {
@@ -95,7 +94,7 @@ pub(crate) mod call_stack_repr {
             Deserialize::deserialize(deserializer)?;
         Ok(raw.map(|vec| {
             vec.into_iter().map(|(origin, lines, columns)| {
-                SourceLocation { origin, columns, lines, _hidden: () }
+                SourceLocation { origin, columns, lines, _placeholder: () }
             }).collect()
         }))
     }
@@ -128,9 +127,9 @@ pub struct SourceLocation {
     /// `sources` array?
     pub origin: usize,
 
-    /// For extensibility.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 /// The cause of an error.
@@ -147,9 +146,9 @@ pub struct Cause {
     /// The HTTP status related to the underlying error.
     pub http_status: u16,
 
-    /// For extensibility.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 impl fmt::Display for Cause {
@@ -173,9 +172,9 @@ pub struct Instruction {
     /// The source location where the error occurred.
     pub source: SourceLocation,
 
-    /// For extensibility.
-    #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 #[test]

@@ -51,6 +51,10 @@ pub use self::source::Source;
 ///     pub status: GenericStatus,
 ///
 ///     // Resource-specific fields here.
+///
+///     /// Placeholder to allow extensibility without breaking the API.
+///     #[serde(skip)]
+///     _placeholder: (),
 /// }
 /// ```
 pub trait Resource: fmt::Debug + DeserializeOwned + Serialize + 'static {
@@ -175,10 +179,9 @@ pub struct ResourceCommon {
     // TODO: The response is missing the `Z`, which makes chrono sad.
     //pub updated: DateTime<UTC>,
 
-    /// Having one hidden field makes it possible to extend this struct
-    /// without breaking semver API guarantees.
-     #[serde(default, skip_serializing)]
-    _hidden: (),
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
 }
 
 // Support modules defining general types.
