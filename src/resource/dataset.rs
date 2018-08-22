@@ -11,7 +11,7 @@ use super::source::Field;
 ///
 /// TODO: Still lots of missing fields.
 #[derive(Clone, Debug, Deserialize, Resource, Serialize)]
-#[api_name = "common"]
+#[api_name = "dataset"]
 pub struct Dataset {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
