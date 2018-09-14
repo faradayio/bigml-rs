@@ -22,6 +22,10 @@ pub struct Args {
     /// The ID of the script to run.
     pub script: Option<Id<Script>>,
 
+    /// A nice name for the execution.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
     /// Inputs to our script.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<(String, serde_json::Value)>,
@@ -43,6 +47,14 @@ impl Args {
     /// Set the script to execute.
     pub fn set_script(&mut self, id: Id<Script>) {
         self.script = Some(id);
+    }
+
+    /// Set the name on the execution.
+    pub fn set_name<S>(&mut self, name: S)
+    where
+        S: Into<String>,
+    {
+        self.name = Some(name.into());
     }
 
     /// Add a named input to our script.
