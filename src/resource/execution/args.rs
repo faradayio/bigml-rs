@@ -49,9 +49,12 @@ impl Args {
         self.script = Some(id);
     }
 
-    /// Set the name to execute.
-    pub fn set_name(&mut self, name: String) {
-        self.name = Some(name);
+    /// Set the name on the execution.
+    pub fn set_name<S>(&mut self, name: S)
+    where
+        S: Into<String>,
+    {
+        self.name = Some(name.into());
     }
 
     /// Add a named input to our script.
