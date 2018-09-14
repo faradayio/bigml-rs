@@ -102,7 +102,10 @@ impl Client {
         where P: AsRef<Path>
     {
         let source = self.create_source_from_path(path)?;
-        self.wait(source.id())
+        // Only wait 2 hours for a source to be created
+        let options = WaitOptions::default()
+            .timeout(Duration::from_secs(2*60*60));
+        self.wait_opt(source.id(), &options, &mut ProgressOptions::default())
     }
 
     /// Update the specified `resource` using `update`. We do not return the
