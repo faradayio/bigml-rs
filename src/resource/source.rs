@@ -42,6 +42,33 @@ pub struct Source {
     _placeholder: (),
 }
 
+/// Arguments used to create a data source.
+///
+/// TODO: Add more fields so people need to use `update` less.
+#[derive(Debug, Serialize)]
+pub struct Args {
+    /// The URL of the data source.
+    pub remote: String,
+
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
+}
+
+impl Args {
+    /// Create a new `Args`.
+    pub fn new<S: Into<String>>(remote: S) -> Args {
+        Args {
+            remote: remote.into(),
+            _placeholder: (),
+        }
+    }
+}
+
+impl super::Args for Args {
+    type Resource = Source;
+}
+
 /// Information about a field in a data source.
 #[derive(Clone, Debug, Deserialize, Serialize, Updatable)]
 pub struct Field {
