@@ -62,7 +62,9 @@ impl Args {
         where S: Into<String>, V: Serialize
     {
         let val = serde_json::value::to_value(value)?;
-        self.inputs.push((name.into(), val));
+        if val != serde_json::Value::Null {
+            self.inputs.push((name.into(), val));
+        }
         Ok(())
     }
 
