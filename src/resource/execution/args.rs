@@ -62,6 +62,8 @@ impl Args {
         where S: Into<String>, V: Serialize
     {
         let val = serde_json::value::to_value(value)?;
+        // WhizzML cannot have null inputs.
+        // You can either pass a value, or not pass the input, but you cannot pass null.
         if val != serde_json::Value::Null {
             self.inputs.push((name.into(), val));
         }
