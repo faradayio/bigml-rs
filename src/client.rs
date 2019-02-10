@@ -61,9 +61,9 @@ impl Client {
         let res = client.post(url.clone())
             .json(args)
             .send()
-            .map_err(|e| Error::could_not_access_url(&url, e))?;
+            .map_err(|e| Error::parse_error(&url, e))?;
         self.handle_response(res)
-            .map_err(|e| Error::could_not_access_url(&url, e))
+            .map_err(|e| Error::parse_error(&url, e))
     }
 
     /// Create a new resource, and wait until it is ready.
@@ -90,9 +90,9 @@ impl Client {
             .header(reqwest::header::ContentType(body.mime_type()))
             .body(body)
             .send()
-            .map_err(|e| Error::could_not_access_url(&url, e))?;
+            .map_err(|e| Error::parse_error(&url, e))?;
         self.handle_response(res)
-            .map_err(|e| Error::could_not_access_url(&url, e))
+            .map_err(|e| Error::parse_error(&url, e))
     }
 
     /// Create a BigML data source using data from the specified path.  We
@@ -122,12 +122,12 @@ impl Client {
             let res = client.request(reqwest::Method::Put, url.clone())
                 .json(update)
                 .send()
-                .map_err(|e| Error::could_not_access_url(&url, e))?;
+                .map_err(|e| Error::parse_error(&url, e))?;
             // Parse our result as JSON, because it often seems to be missing
             // fields like `name` for `Source`. It's not always a complete,
             // valid resource.
             let _json: serde_json::Value = self.handle_response(res)
-                .map_err(|e| Error::could_not_access_url(&url, e))?;
+                .map_err(|e| Error::parse_error(&url, e))?;
 
         Ok(())
     }
@@ -138,9 +138,9 @@ impl Client {
         let client = reqwest::Client::new();
         let res = client.get(url.clone())
             .send()
-            .map_err(|e| Error::could_not_access_url(&url, e))?;
+            .map_err(|e| Error::parse_error(&url, e))?;
         self.handle_response(res)
-            .map_err(|e| Error::could_not_access_url(&url, e))
+            .map_err(|e| Error::parse_error(&url, e))
     }
 
     /// Poll an existing resource, returning it once it's ready.
@@ -177,7 +177,7 @@ impl Client {
             } else {
                 WaitStatus::Waiting
             }
-        }).map_err(|e| Error::could_not_access_url(&url, e))
+        }).map_err(|e| Error::parse_error(&url, e))
     }
 
     /// Download a resource as a CSV file.  This only makes sense for
@@ -220,7 +220,7 @@ impl Client {
                 try_with_temporary_failure!(self.response_to_err(res));
                 unreachable!()
             }
-        }).map_err(|e| Error::could_not_access_url(&url, e))
+        }).map_err(|e| Error::parse_error(&url, e))
     }
 
     /// Delete the specified resource.
@@ -229,13 +229,13 @@ impl Client {
         let client = reqwest::Client::new();
         let res = client.request(reqwest::Method::Delete, url.clone())
             .send()
-            .map_err(|e| Error::could_not_access_url(&url, e))?;
+            .map_err(|e| Error::parse_error(&url, e))?;
         if res.status().is_success() {
             debug!("Deleted {}", &resource);
             Ok(())
         } else {
             self.response_to_err(res)
-                .map_err(|e| Error::could_not_access_url(&url, e))
+                .map_err(|e| Error::parse_error(&url, e))
         }
     }
 

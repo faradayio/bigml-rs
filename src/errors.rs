@@ -22,10 +22,13 @@ pub enum Error {
     /// We could not access the specified URL.
     ///
     /// **WARNING:** Do not construct this directly, but use
-    /// `Error::could_not_access_url` to handle various URL sanitization and
+    /// `Error::parse_error` to handle various URL sanitization and
     /// security issues.
     #[fail(display = "error accessing '{}': {}", url, error)]
     CouldNotAccessUrl { url: Url, /*#[cause]*/ error: failure::Error },
+
+    #[fail(display = "hit resource limits '{}': {}", url, error)]
+    HitResourceLimits { url: Url, /*#[cause]*/ error: failure::Error },
 
     /// We could not get an output value from a WhizzML script.
     #[fail(display = "could not get WhizzML output '{}': {}", name, error)]
@@ -72,6 +75,20 @@ pub enum Error {
 }
 
 impl Error {
+    pub(crate) fn parse_error<E>(
+        url: &Url,
+        error: E,
+    ) -> Error
+    where
+        E: Into<failure::Error>,
+    {
+        // this won't work
+        match error.http_status {
+            402 => Error::hit_resource_limits(&url, error),
+            _ => Error::could_not_access_url(&url, error),
+        }
+    }
+
     /// Construct an `Error::CouldNotAccessUrl` value, taking care to
     /// sanitize the URL query.
     pub(crate) fn could_not_access_url<E>(
@@ -82,6 +99,19 @@ impl Error {
         E: Into<failure::Error>,
     {
         Error::CouldNotAccessUrl {
+            url: url_without_api_key(&url),
+            error: error.into(),
+        }
+    }
+
+    pub(crate) fn hit_resource_limits<E>(
+        url: &Url,
+        error: E,
+    ) -> Error
+    where
+        E: Into<failure::Error>,
+    {
+        Error::HitResourceLimits {
             url: url_without_api_key(&url),
             error: error.into(),
         }
