@@ -39,13 +39,18 @@ pub enum Error {
     #[fail(display = "WhizzML output is not (yet?) available")]
     OutputNotAvailable,
 
+    /// BigML says that payment is required for this request, perhaps because
+    /// we have hit plan limits.
+    #[fail(display = "BigML payment required for {} ({})", url, body)]
+    PaymentRequired { url: Url, body: String },
+
     /// A request timed out.
     #[fail(display = "The operation timed out")]
     Timeout,
 
     /// We received an unexpected HTTP status code.
-    #[fail(display = "{} ({})", status, body)]
-    UnexpectedHttpStatus { status: reqwest::StatusCode, body: String },
+    #[fail(display = "{} for {} ({})", status, url, body)]
+    UnexpectedHttpStatus { url: Url, status: reqwest::StatusCode, body: String },
 
     /// We tried to create a BigML resource, but we failed. Display a dashboard
     /// URL to make it easy to look up the actual error.
