@@ -11,6 +11,15 @@ use errors::*;
 /// Minimum sleep time recommended by BigML support to avoid ban.
 const MIN_SLEEP_SECS: u64 = 4;
 
+/// How should we back off if we fail?
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum BackoffType {
+    /// Use the same interval for each retry.
+    Linear,
+    /// Double the internal after each failure.
+    Exponential,
+}
+
 /// Options controlling how long we wait and what makes us give up.
 /// This uses a "builder" pattern, so you can write:
 ///
@@ -28,6 +37,9 @@ pub struct WaitOptions {
 
     /// How long to wait between retries.
     retry_interval: Duration,
+
+    /// What kind of back-off should we use?
+    backoff_type: BackoffType,
 
     /// How many errors are we allowed before giving up?
     allowed_errors: u16,
@@ -48,6 +60,12 @@ impl WaitOptions {
         self
     }
 
+    /// Should we use linear (default) or exponential backoff?
+    pub fn backoff_type(mut self, backoff_type: BackoffType) -> Self {
+        self.backoff_type = backoff_type;
+        self
+    }
+
     /// How many errors should be ignored before giving up? This can be useful
     /// for long-running `Execution` jobs, where we don't want a transient
     /// network error to result in failure.
@@ -62,6 +80,7 @@ impl Default for WaitOptions {
         Self {
             timeout: None,
             retry_interval: Duration::from_secs(10),
+            backoff_type: BackoffType::Linear,
             allowed_errors: 2,
         }
     }
@@ -142,6 +161,7 @@ where
     Error: Into<E>,
 {
     let deadline = options.timeout.map(|to| SystemTime::now() + to);
+    let mut retry_interval = options.retry_interval;
     let mut errors_seen = 0;
     loop {
         // Check to see if we've exceeded our deadline (if we have one).
@@ -169,6 +189,12 @@ where
         }
 
         // Sleep until our next call.
-        sleep(max(Duration::from_secs(MIN_SLEEP_SECS), options.retry_interval));
+        sleep(max(Duration::from_secs(MIN_SLEEP_SECS), retry_interval));
+
+        // Update retry interval.
+        match options.backoff_type {
+            BackoffType::Linear => {}
+            BackoffType::Exponential => { retry_interval *= 2; }
+        }
     }
 }
