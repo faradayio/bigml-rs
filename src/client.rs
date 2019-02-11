@@ -1,7 +1,6 @@
 //! A client connection to BigML.
 
-use reqwest;
-use reqwest::header::ContentType;
+use reqwest::{self, header::ContentType, StatusCode};
 use serde::de::DeserializeOwned;
 use serde_json;
 use std::io::Read;
@@ -62,8 +61,7 @@ impl Client {
             .json(args)
             .send()
             .map_err(|e| Error::could_not_access_url(&url, e))?;
-        self.handle_response(res)
-            .map_err(|e| Error::could_not_access_url(&url, e))
+        self.handle_response_and_deserialize(&url, res)
     }
 
     /// Create a new resource, and wait until it is ready.
@@ -91,8 +89,7 @@ impl Client {
             .body(body)
             .send()
             .map_err(|e| Error::could_not_access_url(&url, e))?;
-        self.handle_response(res)
-            .map_err(|e| Error::could_not_access_url(&url, e))
+        self.handle_response_and_deserialize(&url, res)
     }
 
     /// Create a BigML data source using data from the specified path.  We
@@ -116,18 +113,17 @@ impl Client {
         resource: &Id<R>,
         update: &<R as Updatable>::Update,
     ) -> Result<()> {
-            let url = self.url(resource.as_str());
-            debug!("PUT {}: {:?}", url, update);
-            let client = reqwest::Client::new();
-            let res = client.request(reqwest::Method::Put, url.clone())
-                .json(update)
-                .send()
-                .map_err(|e| Error::could_not_access_url(&url, e))?;
-            // Parse our result as JSON, because it often seems to be missing
-            // fields like `name` for `Source`. It's not always a complete,
-            // valid resource.
-            let _json: serde_json::Value = self.handle_response(res)
-                .map_err(|e| Error::could_not_access_url(&url, e))?;
+        let url = self.url(resource.as_str());
+        debug!("PUT {}: {:?}", url, update);
+        let client = reqwest::Client::new();
+        let res = client.request(reqwest::Method::Put, url.clone())
+            .json(update)
+            .send()
+            .map_err(|e| Error::could_not_access_url(&url, e))?;
+        // Parse our result as JSON, because it often seems to be missing
+        // fields like `name` for `Source`. It's not always a complete,
+        // valid resource.
+        let _json: serde_json::Value = self.handle_response_and_deserialize(&url, res)?;
 
         Ok(())
     }
@@ -139,8 +135,7 @@ impl Client {
         let res = client.get(url.clone())
             .send()
             .map_err(|e| Error::could_not_access_url(&url, e))?;
-        self.handle_response(res)
-            .map_err(|e| Error::could_not_access_url(&url, e))
+        self.handle_response_and_deserialize(&url, res)
     }
 
     /// Poll an existing resource, returning it once it's ready.
@@ -217,7 +212,9 @@ impl Client {
                 }
                 WaitStatus::Finished(res)
             } else {
-                try_with_temporary_failure!(self.response_to_err(res));
+                try_with_temporary_failure!(self.response_to_err(&url, res));
+                // The above always returns `Err` and bails out, so we can't get
+                // here.
                 unreachable!()
             }
         }).map_err(|e| Error::could_not_access_url(&url, e))
@@ -234,35 +231,42 @@ impl Client {
             debug!("Deleted {}", &resource);
             Ok(())
         } else {
-            self.response_to_err(res)
-                .map_err(|e| Error::could_not_access_url(&url, e))
+            self.response_to_err(&url, res)
         }
     }
 
     /// Handle a response from the server, deserializing it as the
     /// appropriate type.
-    fn handle_response<T>(&self, mut res: reqwest::Response) -> Result<T>
+    fn handle_response_and_deserialize<T>(
+        &self,
+        url: &Url,
+        mut res: reqwest::Response,
+    ) -> Result<T>
         where T: DeserializeOwned
     {
         if res.status().is_success() {
             let mut body = String::new();
-            res.read_to_string(&mut body)?;
+            res.read_to_string(&mut body)
+                .map_err(|e| Error::could_not_access_url(&url, e))?;
             debug!("Success body: {}", &body);
-            let properties = serde_json::from_str(&body)?;
+            let properties = serde_json::from_str(&body)
+                .map_err(|e| Error::could_not_access_url(&url, e))?;
             Ok(properties)
         } else {
-            self.response_to_err(res)
+            self.response_to_err(url, res)
         }
     }
 
-    fn response_to_err<T>(&self, mut res: reqwest::Response) -> Result<T> {
+    fn response_to_err<T>(&self, url: &Url, mut res: reqwest::Response) -> Result<T> {
+        let url = url.to_owned();
+        let status: StatusCode = res.status().to_owned();
         let mut body = String::new();
         res.read_to_string(&mut body)?;
-        debug!("Error body: {}", &body);
-        Err(Error::UnexpectedHttpStatus {
-            status: res.status().to_owned(),
-            body,
-        })
+        debug!("Error status: {} body: {}", status, body);
+        match status {
+            StatusCode::PaymentRequired => Err(Error::PaymentRequired { url, body }),
+            _ => Err(Error::UnexpectedHttpStatus { url, status, body }),
+        }
     }
 }
 
