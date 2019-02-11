@@ -164,13 +164,6 @@ where
     let mut retry_interval = options.retry_interval;
     let mut errors_seen = 0;
     loop {
-        // Check to see if we've exceeded our deadline (if we have one).
-        if let Some(deadline) = deadline {
-            if SystemTime::now() > deadline {
-                return Err(Error::Timeout.into());
-            }
-        }
-
         // Call the function we're waiting on.
         match f() {
             WaitStatus::Finished(value) => { return Ok(value); }
@@ -186,6 +179,13 @@ where
             }
             WaitStatus::FailedTemporarily(err) => { return Err(err); }
             WaitStatus::FailedPermanently(err) => { return Err(err); }
+        }
+
+        // Check to see if we'll exceed our deadline (if we have one).
+        if let Some(deadline) = deadline {
+            if SystemTime::now() + retry_interval > deadline {
+                return Err(Error::Timeout.into());
+            }
         }
 
         // Sleep until our next call.
