@@ -40,7 +40,7 @@ pub struct Execution {
     pub status: ExecutionStatus,
 
     /// Further information about this execution.
-    pub execution: Data,
+    pub execution: Option<Data>,
 
     /// Placeholder to allow extensibility without breaking the API.
     #[serde(skip)]
