@@ -151,10 +151,7 @@ impl<T, E> From<E> for WaitStatus<T, E> {
 ///
 /// If you return `Ok(WaitStatus::Waiting)` instead, this function will wait
 /// some number of seconds, and then try again.
-pub fn wait<T, E, F>(
-    options: &WaitOptions,
-    mut f: F,
-) -> result::Result<T, E>
+pub fn wait<T, E, F>(options: &WaitOptions, mut f: F) -> result::Result<T, E>
 where
     F: FnMut() -> WaitStatus<T, E>,
     E: Display,
@@ -162,28 +159,42 @@ where
 {
     let deadline = options.timeout.map(|to| SystemTime::now() + to);
     let mut retry_interval = options.retry_interval;
+    trace!("waiting with deadline {:?}, initial interval {:?}", deadline, retry_interval);
     let mut errors_seen = 0;
     loop {
         // Call the function we're waiting on.
         match f() {
-            WaitStatus::Finished(value) => { return Ok(value); }
-            WaitStatus::Waiting => {}
+            WaitStatus::Finished(value) => {
+                trace!("wait finished successfully");
+                return Ok(value);
+            }
+            WaitStatus::Waiting => trace!("waiting some more"),
             WaitStatus::FailedTemporarily(ref e) if errors_seen < options.allowed_errors => {
                 errors_seen += 1;
                 error!(
-                    "Got error, will retry ({}/{}): {}",
-                    errors_seen,
-                    options.allowed_errors,
-                    e,
+                    "got error, will retry ({}/{}): {}",
+                    errors_seen, options.allowed_errors, e,
                 );
             }
-            WaitStatus::FailedTemporarily(err) => { return Err(err); }
-            WaitStatus::FailedPermanently(err) => { return Err(err); }
+            WaitStatus::FailedTemporarily(err) => {
+                trace!("too many temporary failures, giving up on wait: {}", err);
+                return Err(err);
+            }
+            WaitStatus::FailedPermanently(err) => {
+                trace!("permanent failure, giving up on wait: {}", err);
+                return Err(err);
+            }
         }
 
         // Check to see if we'll exceed our deadline (if we have one).
         if let Some(deadline) = deadline {
-            if SystemTime::now() + retry_interval > deadline {
+            let next_attempt = SystemTime::now() + retry_interval;
+            if next_attempt > deadline {
+                trace!(
+                    "next attempt {:?} would fall after deadline {:?}, ending wait",
+                    next_attempt,
+                    deadline
+                );
                 return Err(Error::Timeout.into());
             }
         }
@@ -194,7 +205,10 @@ where
         // Update retry interval.
         match options.backoff_type {
             BackoffType::Linear => {}
-            BackoffType::Exponential => { retry_interval *= 2; }
+            BackoffType::Exponential => {
+                retry_interval *= 2;
+                trace!("next retry doubled to {:?}", retry_interval);
+            }
         }
     }
 }
