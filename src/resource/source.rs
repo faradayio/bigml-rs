@@ -102,7 +102,7 @@ pub struct Field {
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub enum Optype {
     /// Treat this as a date value.
-    #[serde(rename="date-time")]
+    #[serde(rename="datetime")]
     DateTime,
 
     /// Treat this as a numeric value.
