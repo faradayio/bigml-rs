@@ -6,7 +6,7 @@ use std::result;
 use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
-use errors::*;
+use crate::errors::*;
 
 /// Minimum sleep time recommended by BigML support to avoid ban.
 const MIN_SLEEP_SECS: u64 = 4;

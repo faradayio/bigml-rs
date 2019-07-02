@@ -9,8 +9,8 @@ use std::fmt;
 use std::result;
 use url::Url;
 
-use client::Client;
-use errors::*;
+use crate::client::Client;
+use crate::errors::*;
 use super::id::*;
 use super::status::*;
 use super::{Resource, ResourceCommon};

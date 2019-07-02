@@ -1,6 +1,6 @@
 //! Code used for reporting execution progress.
 
-use errors::*;
+use crate::errors::*;
 
 /// A callback which we be callled every time we have a new `T` value.
 pub type ProgressCallback<'a, T> = FnMut(&T) -> Result<()> + 'a;

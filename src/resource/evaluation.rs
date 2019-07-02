@@ -1,6 +1,6 @@
 //! An evaluation of how well a model (or ensemble) predicts the data.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use std::fmt;
 

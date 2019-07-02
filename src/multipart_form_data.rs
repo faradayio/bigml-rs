@@ -7,7 +7,7 @@ use std::io::{self, Read};
 use std::path::PathBuf;
 use uuid::Uuid;
 
-use errors::*;
+use crate::errors::*;
 
 /// A `multipart/form-data` body containing exactly one file.  We can
 /// generalize this latter if we need to, but maybe upstream will be fixed

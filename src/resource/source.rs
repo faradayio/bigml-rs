@@ -1,5 +1,6 @@
 //! A data source used by BigML.
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use super::{Resource, ResourceCommon, Updatable};

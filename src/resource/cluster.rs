@@ -1,5 +1,6 @@
 //! https://bigml.com/api/clusters
 
+use serde::{Deserialize, Serialize};
 use serde_json;
 
 use super::{Resource, ResourceCommon};

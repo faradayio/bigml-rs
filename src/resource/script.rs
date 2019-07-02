@@ -1,9 +1,10 @@
 //! A WhizzML script on BigML.
 
+use serde::{Deserialize, Serialize};
 use serde_json;
 use std::{fmt, str::FromStr};
 
-use errors::*;
+use crate::errors::*;
 use super::{Resource, ResourceCommon};
 use super::id::*;
 use super::library::Library;

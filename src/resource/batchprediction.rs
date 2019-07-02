@@ -1,5 +1,6 @@
 //! A batch prediction of missing values from a data set.
 
+use serde::{Deserialize, Serialize};
 
 use super::{Resource, ResourceCommon};
 use super::id::*;

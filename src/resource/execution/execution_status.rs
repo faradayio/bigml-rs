@@ -1,8 +1,9 @@
+use serde::{Deserialize, Serialize};
 use serde_json;
 use std::collections::HashMap;
 use std::fmt;
 
-use resource::status::*;
+use crate::resource::status::*;
 
 /// Execution-specific status information.
 #[derive(Clone, Debug, Deserialize, Serialize)]

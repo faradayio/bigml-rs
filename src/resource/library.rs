@@ -1,5 +1,7 @@
 //! BigML dataset support.
 
+use serde::{Deserialize, Serialize};
+
 use super::id::*;
 use super::status::*;
 use super::{Resource, ResourceCommon};

@@ -1,5 +1,6 @@
 //! An ensemble of multiple predictive models.
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use super::{Resource, ResourceCommon};

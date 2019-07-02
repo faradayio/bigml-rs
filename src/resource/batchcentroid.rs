@@ -1,5 +1,7 @@
 //! https://bigml.com/api/batchcentroids
 
+use serde::{Deserialize, Serialize};
+
 use super::{Resource, ResourceCommon};
 use super::id::*;
 use super::status::*;

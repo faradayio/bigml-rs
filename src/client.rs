@@ -1,6 +1,6 @@
 //! A client connection to BigML.
 
-use reqwest::{self, header::ContentType, StatusCode};
+use reqwest::{self, StatusCode};
 use serde::de::DeserializeOwned;
 use serde_json;
 use std::io::Read;
@@ -8,11 +8,11 @@ use std::path::Path;
 use std::time::Duration;
 use url::Url;
 
-use errors::*;
-use multipart_form_data;
-use progress::ProgressOptions;
-use resource::{self, Id, Resource, Source, Updatable};
-use wait::{wait, WaitOptions, WaitStatus};
+use crate::errors::*;
+use crate::multipart_form_data;
+use crate::progress::ProgressOptions;
+use crate::resource::{self, Id, Resource, Source, Updatable};
+use crate::wait::{wait, WaitOptions, WaitStatus};
 
 lazy_static! {
     /// The URL of the BigML API.
@@ -85,7 +85,7 @@ impl Client {
         let url = self.url("/source");
         let client = reqwest::Client::new();
         let res = client.post(url.clone())
-            .header(reqwest::header::ContentType(body.mime_type()))
+            .header("Content-Type", body.mime_type().to_string())
             .body(body)
             .send()
             .map_err(|e| Error::could_not_access_url(&url, e))?;
@@ -116,7 +116,7 @@ impl Client {
         let url = self.url(resource.as_str());
         debug!("PUT {}: {:?}", url, update);
         let client = reqwest::Client::new();
-        let res = client.request(reqwest::Method::Put, url.clone())
+        let res = client.request(reqwest::Method::PUT, url.clone())
             .json(update)
             .send()
             .map_err(|e| Error::could_not_access_url(&url, e))?;
@@ -202,8 +202,8 @@ impl Client {
                 // Sometimes "/download" returns JSON instead of CSV, which
                 // is generally a sign that we need to wait.
                 let headers = res.headers().to_owned();
-                if let Some(ct) = headers.get::<ContentType>() {
-                    if ct.type_() == "application" && ct.subtype() == "json" {
+                if let Some(ct) = headers.get("Content-Type") {
+                    if ct.as_bytes().starts_with(b"application/json") {
                         let mut body = String::new();
                         try_with_temporary_failure!(res.read_to_string(&mut body));
                         debug!("Got JSON when downloading CSV: {}", body);
@@ -224,7 +224,7 @@ impl Client {
     pub fn delete<R: Resource>(&self, resource: &Id<R>) -> Result<()> {
         let url = self.url(resource.as_str());
         let client = reqwest::Client::new();
-        let res = client.request(reqwest::Method::Delete, url.clone())
+        let res = client.request(reqwest::Method::DELETE, url.clone())
             .send()
             .map_err(|e| Error::could_not_access_url(&url, e))?;
         if res.status().is_success() {
@@ -264,7 +264,7 @@ impl Client {
         res.read_to_string(&mut body)?;
         debug!("Error status: {} body: {}", status, body);
         match status {
-            StatusCode::PaymentRequired => Err(Error::PaymentRequired { url, body }),
+            StatusCode::PAYMENT_REQUIRED => Err(Error::PaymentRequired { url, body }),
             _ => Err(Error::UnexpectedHttpStatus { url, status, body }),
         }
     }

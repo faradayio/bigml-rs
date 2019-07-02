@@ -8,10 +8,10 @@ use std::error;
 use std::fmt;
 use std::result;
 
-use errors::*;
-use resource;
-use resource::id::*;
-use resource::Script;
+use crate::errors::*;
+use crate::resource;
+use crate::resource::id::*;
+use crate::resource::Script;
 use super::Execution;
 
 /// Arguments for creating a script execution.

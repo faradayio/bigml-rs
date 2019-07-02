@@ -1,6 +1,6 @@
 //! Resource types manipulated by the BigML API.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use std::{collections::HashMap, fmt};
 
@@ -31,7 +31,7 @@ pub use self::source::Source;
 /// ```
 /// # #[macro_use] extern crate bigml_derive;
 /// # extern crate bigml;
-/// # #[macro_use] extern crate serde_derive;
+/// # use serde::{Deserialize, Serialize};
 /// # use bigml::resource::{GenericStatus, Id, Resource, ResourceCommon, Status, Updatable};
 /// #[derive(Clone, Debug, Deserialize, Resource, Serialize, Updatable)]
 /// #[api_name = "exampleresource"]

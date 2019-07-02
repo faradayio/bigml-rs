@@ -8,7 +8,7 @@ use std::result;
 use std::str::FromStr;
 use url::Url;
 
-use errors::*;
+use crate::errors::*;
 use super::Resource;
 
 /// A strongly-typed "resource ID" used to identify many different kinds of
