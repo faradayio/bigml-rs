@@ -34,6 +34,10 @@ pub struct Source {
     /// The number of bytes of the source.
     pub size: u64,
 
+    /// Whether BigML should automatically expand dates into year, day of week, etc.
+    #[updatable]
+    pub disable_datetime: Option<bool>,
+
     /// The fields in this source, keyed by BigML internal ID.
     #[updatable]
     pub fields: Option<HashMap<String, Field>>,
@@ -51,6 +55,9 @@ pub struct Args {
     /// The URL of the data source.
     pub remote: String,
 
+    /// Set to true if you want to avoid date expansion into year, day of week, etc.
+    pub disable_datetime: Option<bool>,
+
     /// Placeholder to allow extensibility without breaking the API.
     #[serde(skip)]
     _placeholder: (),
@@ -61,6 +68,7 @@ impl Args {
     pub fn new<S: Into<String>>(remote: S) -> Args {
         Args {
             remote: remote.into(),
+            disable_datetime: None,
             _placeholder: (),
         }
     }
@@ -93,6 +101,10 @@ pub struct Field {
 /// The type of a data field.
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub enum Optype {
+    /// Treat this as a date value.
+    #[serde(rename="datetime")]
+    DateTime,
+
     /// Treat this as a numeric value.
     #[serde(rename = "numeric")]
     Numeric,

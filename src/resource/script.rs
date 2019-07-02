@@ -194,6 +194,7 @@ declare_type_enum! {
     Text => "text",
     Items => "items",
     Number => "number",
+    // DateTime => "date-time",
     Numeric => "numeric",
     Integer => "integer",
     Boolean => "boolean",
