@@ -96,6 +96,7 @@ pub(crate) mod call_stack_repr {
     where
         D: Deserializer<'de>,
     {
+        #[allow(clippy::type_complexity)]
         let raw: Option<Vec<(usize, (u64, u64), (u64, u64))>> =
             Deserialize::deserialize(deserializer)?;
         Ok(raw.map(|vec| {

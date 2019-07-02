@@ -2,7 +2,7 @@
 
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, fmt, hash::BuildHasher};
 
 // We re-export everything from our support submodules.
 pub use self::id::*;
@@ -112,7 +112,7 @@ macro_rules! primitive_updatable_types {
 primitive_updatable_types!(bool, i64, String, u16);
 
 /// `HashMap<String, T>` can be updated using `HashMap<String, T::Update>`.
-impl<T: Updatable> Updatable for HashMap<String, T> {
+impl<T: Updatable, H: BuildHasher> Updatable for HashMap<String, T, H> {
     type Update = HashMap<String, <T as Updatable>::Update>;
 }
 

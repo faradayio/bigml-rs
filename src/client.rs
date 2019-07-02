@@ -206,7 +206,7 @@ impl Client {
 
     /// Download a resource as a CSV file.  This only makes sense for
     /// certain kinds of resources.
-    pub fn download_opt<'a, R: Resource>(
+    pub fn download_opt<R: Resource>(
         &self,
         resource: &Id<R>,
         options: &WaitOptions,
