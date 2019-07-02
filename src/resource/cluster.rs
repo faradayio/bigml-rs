@@ -3,9 +3,9 @@
 use serde::{Deserialize, Serialize};
 use serde_json;
 
-use super::{Resource, ResourceCommon};
 use super::id::*;
 use super::status::*;
+use super::{Resource, ResourceCommon};
 
 /// An cluster of multiple predictive models.
 ///
@@ -31,7 +31,6 @@ pub struct Cluster {
 
     // The dataset used to create this cluster.
     //pub dataset: Id<Dataset>,
-
     /// Placeholder to allow extensibility without breaking the API.
     #[serde(skip)]
     _placeholder: (),

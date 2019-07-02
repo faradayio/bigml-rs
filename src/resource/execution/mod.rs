@@ -1,20 +1,20 @@
 //! An execution of a WhizzML script.
 
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde::de::DeserializeOwned;
 use serde::de;
+use serde::de::DeserializeOwned;
 use serde::ser::SerializeSeq;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json;
 use std::fmt;
 use std::result;
 use url::Url;
 
-use crate::client::Client;
-use crate::errors::*;
 use super::id::*;
 use super::status::*;
-use super::{Resource, ResourceCommon};
 use super::{Library, Script};
+use super::{Resource, ResourceCommon};
+use crate::client::Client;
+use crate::errors::*;
 
 mod args;
 mod execution_status;
@@ -102,7 +102,8 @@ pub struct Source {
 
 impl<'de> Deserialize<'de> for Source {
     fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
-        where D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         struct Visitor;
 
@@ -111,22 +112,31 @@ impl<'de> Deserialize<'de> for Source {
         impl<'de> de::Visitor<'de> for Visitor {
             type Value = Source;
 
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 write!(f, "a list with a source ID and a description")
             }
 
-            fn visit_seq<V>(self, mut visitor: V)
-                            -> result::Result<Self::Value, V::Error>
-                where V: de::SeqAccess<'de>
+            fn visit_seq<V>(
+                self,
+                mut visitor: V,
+            ) -> result::Result<Self::Value, V::Error>
+            where
+                V: de::SeqAccess<'de>,
             {
                 use serde::de::Error;
 
-                let id = visitor.next_element()?
+                let id = visitor
+                    .next_element()?
                     .ok_or_else(|| V::Error::custom("no id field in source"))?;
-                let description = visitor.next_element()?
-                    .ok_or_else(|| V::Error::custom("no description field in source"))?;
+                let description = visitor.next_element()?.ok_or_else(|| {
+                    V::Error::custom("no description field in source")
+                })?;
 
-                Ok(Source { id, description, _placeholder: () })
+                Ok(Source {
+                    id,
+                    description,
+                    _placeholder: (),
+                })
             }
         }
 
@@ -136,7 +146,8 @@ impl<'de> Deserialize<'de> for Source {
 
 impl Serialize for Source {
     fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         let mut seq = serializer.serialize_seq(Some(2))?;
         seq.serialize_element(&self.id)?;
@@ -166,18 +177,14 @@ impl SourceId {
     /// Download the corresponding source code.
     pub fn fetch_source_code(&self, client: &Client) -> Result<String> {
         match *self {
-            SourceId::Library(ref id) => {
-                Ok(client.fetch(id)?.source_code)
-            }
-            SourceId::Script(ref id) => {
-                Ok(client.fetch(id)?.source_code)
-            }
+            SourceId::Library(ref id) => Ok(client.fetch(id)?.source_code),
+            SourceId::Script(ref id) => Ok(client.fetch(id)?.source_code),
         }
     }
 }
 
 impl fmt::Display for SourceId {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             SourceId::Library(ref id) => id.fmt(fmt),
             SourceId::Script(ref id) => id.fmt(fmt),
@@ -187,7 +194,8 @@ impl fmt::Display for SourceId {
 
 impl<'de> Deserialize<'de> for SourceId {
     fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
-        where D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         struct Visitor;
 
@@ -196,20 +204,23 @@ impl<'de> Deserialize<'de> for SourceId {
         impl<'de> de::Visitor<'de> for Visitor {
             type Value = SourceId;
 
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 write!(f, "a script or library ID")
             }
 
             fn visit_str<E>(self, value: &str) -> result::Result<Self::Value, E>
-                where E: de::Error
+            where
+                E: de::Error,
             {
                 if value.starts_with(Library::id_prefix()) {
-                    let id = value.parse()
-                       .map_err(|e| de::Error::custom(format!("{}", e)))?;
+                    let id = value
+                        .parse()
+                        .map_err(|e| de::Error::custom(format!("{}", e)))?;
                     Ok(SourceId::Library(id))
                 } else if value.starts_with(Script::id_prefix()) {
-                    let id = value.parse()
-                       .map_err(|e| de::Error::custom(format!("{}", e)))?;
+                    let id = value
+                        .parse()
+                        .map_err(|e| de::Error::custom(format!("{}", e)))?;
                     Ok(SourceId::Script(id))
                 } else {
                     Err(de::Error::custom("expected script or library ID"))
@@ -223,7 +234,8 @@ impl<'de> Deserialize<'de> for SourceId {
 
 impl Serialize for SourceId {
     fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         match *self {
             SourceId::Library(ref id) => id.serialize(serializer),

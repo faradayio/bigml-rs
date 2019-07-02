@@ -1,6 +1,6 @@
-extern crate bigml;
-extern crate env_logger;
-extern crate failure;
+use bigml;
+use env_logger;
+use failure;
 #[macro_use]
 extern crate log;
 
@@ -16,11 +16,11 @@ type Result<T> = result::Result<T, failure::Error>;
 
 /// A local helper function which does the real work, and which can return
 /// an error (unlike `main`).
-fn helper(script_id: &str,
-          inputs: &[(String, String)],
-          outputs: &[String])
-          -> Result<()> {
-
+fn helper(
+    script_id: &str,
+    inputs: &[(String, String)],
+    outputs: &[String],
+) -> Result<()> {
     // Get our BigML credentials.
     let bigml_username = env::var("BIGML_USERNAME")
         .context("pass BIGML_USERNAME as an environment variable")?;
@@ -48,9 +48,12 @@ fn helper(script_id: &str,
 }
 
 fn usage() -> ! {
-    writeln!(&mut io::stderr(), "\
-Usage: create_execution <SCRIPT_ID> <INPUT>=<VALUE>... --output=<NAME>...")
-        .expect("can't write to stderr, giving up");
+    writeln!(
+        &mut io::stderr(),
+        "\
+         Usage: create_execution <SCRIPT_ID> <INPUT>=<VALUE>... --output=<NAME>..."
+    )
+    .expect("can't write to stderr, giving up");
     process::exit(1);
 }
 

@@ -3,9 +3,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use super::{Resource, ResourceCommon};
 use super::id::*;
 use super::status::*;
+use super::{Resource, ResourceCommon};
 
 /// An ensemble of multiple predictive models.
 ///
@@ -39,7 +39,6 @@ pub struct Ensemble {
 
     // The dataset used to create this ensemble.
     //pub dataset: Id<Dataset>,
-
     /// Placeholder to allow extensibility without breaking the API.
     #[serde(skip)]
     _placeholder: (),

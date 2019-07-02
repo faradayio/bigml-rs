@@ -1,12 +1,12 @@
 //! An evaluation of how well a model (or ensemble) predicts the data.
 
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
-use super::{Resource, ResourceCommon};
 use super::id::*;
 use super::status::*;
+use super::{Resource, ResourceCommon};
 
 /// An evaluation of how well a model (or ensemble) predicts the data.
 ///
@@ -38,8 +38,7 @@ pub struct Evaluation<R: Result> {
 ///
 /// TODO: I'm not sure we want to shadow `Result`.  But this name will
 /// basically always be qualified, so maybe it's OK.
-pub trait Result: fmt::Debug + DeserializeOwned + Serialize + Sized + 'static {
-}
+pub trait Result: fmt::Debug + DeserializeOwned + Serialize + Sized + 'static {}
 
 /// The result of evaluating a classifier.
 #[derive(Debug, Deserialize, Serialize)]

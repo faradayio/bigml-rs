@@ -4,11 +4,11 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::{fmt, str::FromStr};
 
-use crate::errors::*;
-use super::{Resource, ResourceCommon};
 use super::id::*;
 use super::library::Library;
 use super::status::*;
+use super::{Resource, ResourceCommon};
+use crate::errors::*;
 
 /// A WhizzML script on BigML.
 ///
@@ -39,27 +39,27 @@ pub struct Script {
 #[derive(Debug, Serialize)]
 pub struct Args {
     /// The category code which best describes this script.
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub category: Option<i64>,
 
     /// A human-readable description of this script.
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 
     /// A list of "library/..." identifiers to import.
-    #[serde(skip_serializing_if="Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub imports: Vec<Id<Library>>,
 
     /// A list of script input declarations.
-    #[serde(skip_serializing_if="Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<Input>,
 
     /// A human-readable name for this script.
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
     /// A list of script output declarations.
-    #[serde(skip_serializing_if="Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub outputs: Vec<Output>,
 
     /// The source code of this script.
@@ -117,7 +117,7 @@ impl Input {
     pub fn new<S: Into<String>>(name: S, type_: Type) -> Input {
         Input {
             name: name.into(),
-            type_: type_,
+            type_,
             default: None,
             description: None,
             _placeholder: (),
@@ -145,7 +145,7 @@ impl Output {
     pub fn new<S: Into<String>>(name: S, type_: Type) -> Output {
         Output {
             name: name.into(),
-            type_: type_,
+            type_,
             description: None,
             _placeholder: (),
         }
@@ -166,7 +166,7 @@ macro_rules! declare_type_enum {
         }
 
         impl fmt::Display for Type {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 match *self {
                     $( Type::$name => $api_name.fmt(f), )*
                 }

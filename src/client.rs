@@ -29,7 +29,9 @@ pub struct Client {
 impl Client {
     /// Create a new `Client`.
     pub fn new<S1, S2>(username: S1, api_key: S2) -> Result<Client>
-        where S1: Into<String>, S2: Into<String>
+    where
+        S1: Into<String>,
+        S2: Into<String>,
     {
         Ok(Client {
             username: username.into(),
@@ -52,12 +54,18 @@ impl Client {
 
     /// Create a new resource.
     pub fn create<Args>(&self, args: &Args) -> Result<Args::Resource>
-        where Args: resource::Args
+    where
+        Args: resource::Args,
     {
         let url = self.url(Args::Resource::create_path());
-        debug!("POST {} {:#?}", Args::Resource::create_path(), &serde_json::to_string(args));
+        debug!(
+            "POST {} {:#?}",
+            Args::Resource::create_path(),
+            &serde_json::to_string(args)
+        );
         let client = reqwest::Client::new();
-        let res = client.post(url.clone())
+        let res = client
+            .post(url.clone())
             .json(args)
             .send()
             .map_err(|e| Error::could_not_access_url(&url, e))?;
@@ -66,7 +74,8 @@ impl Client {
 
     /// Create a new resource, and wait until it is ready.
     pub fn create_and_wait<Args>(&self, args: &Args) -> Result<Args::Resource>
-        where Args: resource::Args
+    where
+        Args: resource::Args,
     {
         self.wait(self.create(args)?.id())
     }
@@ -75,7 +84,8 @@ impl Client {
     /// stream the data over the network without trying to load it all into
     /// memory.
     pub fn create_source_from_path<P>(&self, path: P) -> Result<Source>
-        where P: AsRef<Path>
+    where
+        P: AsRef<Path>,
     {
         let path = path.as_ref();
         let body = multipart_form_data::Body::new("file", path)
@@ -84,7 +94,8 @@ impl Client {
         // Post our request.
         let url = self.url("/source");
         let client = reqwest::Client::new();
-        let res = client.post(url.clone())
+        let res = client
+            .post(url.clone())
             .header("Content-Type", body.mime_type().to_string())
             .body(body)
             .send()
@@ -96,12 +107,12 @@ impl Client {
     /// stream the data over the network without trying to load it all into
     /// memory.
     pub fn create_source_from_path_and_wait<P>(&self, path: P) -> Result<Source>
-        where P: AsRef<Path>
+    where
+        P: AsRef<Path>,
     {
         let source = self.create_source_from_path(path)?;
         // Only wait 2 hours for a source to be created
-        let options = WaitOptions::default()
-            .timeout(Duration::from_secs(2*60*60));
+        let options = WaitOptions::default().timeout(Duration::from_secs(2 * 60 * 60));
         self.wait_opt(source.id(), &options, &mut ProgressOptions::default())
     }
 
@@ -116,14 +127,16 @@ impl Client {
         let url = self.url(resource.as_str());
         debug!("PUT {}: {:?}", url, update);
         let client = reqwest::Client::new();
-        let res = client.request(reqwest::Method::PUT, url.clone())
+        let res = client
+            .request(reqwest::Method::PUT, url.clone())
             .json(update)
             .send()
             .map_err(|e| Error::could_not_access_url(&url, e))?;
         // Parse our result as JSON, because it often seems to be missing
         // fields like `name` for `Source`. It's not always a complete,
         // valid resource.
-        let _json: serde_json::Value = self.handle_response_and_deserialize(&url, res)?;
+        let _json: serde_json::Value =
+            self.handle_response_and_deserialize(&url, res)?;
 
         Ok(())
     }
@@ -132,7 +145,8 @@ impl Client {
     pub fn fetch<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
         let url = self.url(resource.as_str());
         let client = reqwest::Client::new();
-        let res = client.get(url.clone())
+        let res = client
+            .get(url.clone())
             .send()
             .map_err(|e| Error::could_not_access_url(&url, e))?;
         self.handle_response_and_deserialize(&url, res)
@@ -140,7 +154,11 @@ impl Client {
 
     /// Poll an existing resource, returning it once it's ready.
     pub fn wait<R: Resource>(&self, resource: &Id<R>) -> Result<R> {
-        self.wait_opt(resource, &WaitOptions::default(), &mut ProgressOptions::default())
+        self.wait_opt(
+            resource,
+            &WaitOptions::default(),
+            &mut ProgressOptions::default(),
+        )
     }
 
     /// Poll an existing resource, returning it once it's ready, and honoring
@@ -172,7 +190,8 @@ impl Client {
             } else {
                 WaitStatus::Waiting
             }
-        }).map_err(|e| Error::could_not_access_url(&url, e))
+        })
+        .map_err(|e| Error::could_not_access_url(&url, e))
     }
 
     /// Download a resource as a CSV file.  This only makes sense for
@@ -181,8 +200,7 @@ impl Client {
         &self,
         resource: &Id<R>,
     ) -> Result<reqwest::Response> {
-        let options = WaitOptions::default()
-            .timeout(Duration::from_secs(3*60));
+        let options = WaitOptions::default().timeout(Duration::from_secs(3 * 60));
         self.download_opt(resource, &options)
     }
 
@@ -217,14 +235,16 @@ impl Client {
                 // here.
                 unreachable!()
             }
-        }).map_err(|e| Error::could_not_access_url(&url, e))
+        })
+        .map_err(|e| Error::could_not_access_url(&url, e))
     }
 
     /// Delete the specified resource.
     pub fn delete<R: Resource>(&self, resource: &Id<R>) -> Result<()> {
         let url = self.url(resource.as_str());
         let client = reqwest::Client::new();
-        let res = client.request(reqwest::Method::DELETE, url.clone())
+        let res = client
+            .request(reqwest::Method::DELETE, url.clone())
             .send()
             .map_err(|e| Error::could_not_access_url(&url, e))?;
         if res.status().is_success() {
@@ -242,7 +262,8 @@ impl Client {
         url: &Url,
         mut res: reqwest::Response,
     ) -> Result<T>
-        where T: DeserializeOwned
+    where
+        T: DeserializeOwned,
     {
         if res.status().is_success() {
             let mut body = String::new();
@@ -273,10 +294,8 @@ impl Client {
 #[test]
 fn client_url_is_sanitizable() {
     let client = Client::new("example", "secret").unwrap();
-    let err: Error = Error::could_not_access_url(
-        &client.url("/test"),
-        format_err!("Details"),
-    );
+    let err: Error =
+        Error::could_not_access_url(&client.url("/test"), format_err!("Details"));
     let err_str = format!("{}", err);
     println!("err_str = {:?}", err_str);
     assert!(!err_str.contains("secret"));

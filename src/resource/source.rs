@@ -3,9 +3,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use super::{Resource, ResourceCommon, Updatable};
 use super::id::*;
 use super::status::*;
+use super::{Resource, ResourceCommon, Updatable};
 
 /// A data source used by BigML.
 ///
@@ -85,7 +85,6 @@ pub struct Field {
 
     // (This is not well-documented in the BigML API.)
     //pub missing_tokens: Option<Vec<String>>,
-
     /// Placeholder to allow extensibility without breaking the API.
     #[serde(skip)]
     _placeholder: (),
@@ -95,19 +94,19 @@ pub struct Field {
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
 pub enum Optype {
     /// Treat this as a numeric value.
-    #[serde(rename="numeric")]
+    #[serde(rename = "numeric")]
     Numeric,
     /// Threat this as a category with multiple possible values, but not
     /// arbitrary strings.
-    #[serde(rename="categorical")]
+    #[serde(rename = "categorical")]
     Categorical,
     /// Treat this as text.  This uses different machine learning
     /// algorithms than `Categorical`.
-    #[serde(rename="text")]
+    #[serde(rename = "text")]
     Text,
     /// Treat this as a list of muliple items separated by an auto-detected
     /// separator.
-    #[serde(rename="items")]
+    #[serde(rename = "items")]
     Items,
 }
 
@@ -118,12 +117,13 @@ impl Updatable for Optype {
 #[test]
 fn update_source_name() {
     use super::ResourceCommonUpdate;
+    use serde_json::json;
     let source_update = SourceUpdate {
-        common: Some(ResourceCommonUpdate{
+        common: Some(ResourceCommonUpdate {
             name: Some("example".to_owned()),
-            .. ResourceCommonUpdate::default()
+            ..ResourceCommonUpdate::default()
         }),
-        .. SourceUpdate::default()
+        ..SourceUpdate::default()
     };
     assert_eq!(json!(source_update), json!({ "name": "example" }));
 }

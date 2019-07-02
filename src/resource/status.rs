@@ -1,7 +1,7 @@
 //! Types represesting the status of a BigML resource.
 
-use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::Unexpected;
+use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 use std::result;
 
 /// A BigML status code.
@@ -42,14 +42,14 @@ impl StatusCode {
 
     /// Did something go wrong while processing this resource?
     pub fn is_err(self) -> bool {
-        self == StatusCode::Faulty ||
-            self == StatusCode::Unknown
+        self == StatusCode::Faulty || self == StatusCode::Unknown
     }
 }
 
 impl<'de> Deserialize<'de> for StatusCode {
     fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         match i64::deserialize(deserializer)? {
             0 => Ok(StatusCode::Waiting),
@@ -63,8 +63,9 @@ impl<'de> Deserialize<'de> for StatusCode {
             code => {
                 let unexpected = Unexpected::Signed(code);
                 let expected = "a number between -2 and 5";
-                Err(<D::Error as serde::de::Error>::invalid_value(unexpected,
-                                                                  &expected))
+                Err(<D::Error as serde::de::Error>::invalid_value(
+                    unexpected, &expected,
+                ))
             }
         }
     }
@@ -72,7 +73,8 @@ impl<'de> Deserialize<'de> for StatusCode {
 
 impl Serialize for StatusCode {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         let code = match *self {
             StatusCode::Waiting => 0,

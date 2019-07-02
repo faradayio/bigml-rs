@@ -15,13 +15,15 @@ use crate::errors::*;
 pub struct Body {
     boundary: String,
     size: u64,
-    reader: Box<Read+Send>,
+    reader: Box<dyn Read + Send>,
 }
 
 impl Body {
     /// Create a new multipart body.
     pub fn new<S, P>(name: S, path: P) -> Result<Body>
-        where S: Into<String>, P: Into<PathBuf>
+    where
+        S: Into<String>,
+        P: Into<PathBuf>,
     {
         // Convert our parameters.
         let name = name.into();
@@ -29,8 +31,8 @@ impl Body {
         let filename = path.to_string_lossy();
 
         // Open up our file.
-        let file = fs::File::open(&path)
-            .map_err(|e| Error::could_not_read_file(&path, e))?;
+        let file =
+            fs::File::open(&path).map_err(|e| Error::could_not_read_file(&path, e))?;
         let file_size = file.metadata()?.len();
 
         // Create a streaming, multi-part encoder.  Don't even think of
@@ -39,21 +41,27 @@ impl Body {
         //
         // TODO: Escape filename.
         let boundary = format!("--------------------------{}", Uuid::new_v4());
-        let header = format!("--{}\r
+        let header = format!(
+            "--{}\r
 Content-Disposition: form-data; name=\"{}\"; filename=\"{}\"\r
 Content-Type: application/octet-stream\r
 \r
-", &boundary, &name, filename);
-        let footer = format!("\r
+",
+            &boundary, &name, filename
+        );
+        let footer = format!(
+            "\r
 --{}--\r
-", &boundary);
+",
+            &boundary
+        );
         let size = header.len() as u64 + file_size + footer.len() as u64;
         let body = io::Cursor::new(header)
             .chain(file)
             .chain(io::Cursor::new(footer));
         Ok(Body {
-            boundary: boundary,
-            size: size,
+            boundary,
+            size,
             reader: Box::new(body),
         })
     }

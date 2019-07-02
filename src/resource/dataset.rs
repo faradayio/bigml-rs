@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use super::id::*;
+use super::source::Field;
 use super::status::*;
 use super::{Resource, ResourceCommon};
-use super::source::Field;
 
 /// A BigML dataset. Basically a table of data with named columns.
 ///
@@ -48,4 +48,3 @@ pub struct Dataset {
     #[serde(skip)]
     _placeholder: (),
 }
-

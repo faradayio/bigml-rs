@@ -22,7 +22,11 @@ pub struct ExecutionStatus {
     pub progress: Option<f32>,
 
     /// The call stack, if one is present.
-    #[serde(default, skip_serializing_if="Option::is_none", with="call_stack_repr")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "call_stack_repr"
+    )]
     pub call_stack: Option<Vec<SourceLocation>>,
 
     /// The cause of the error.
@@ -89,14 +93,20 @@ pub(crate) mod call_stack_repr {
     pub(crate) fn deserialize<'de, D>(
         deserializer: D,
     ) -> result::Result<Option<Vec<SourceLocation>>, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let raw: Option<Vec<(usize, (u64, u64), (u64, u64))>> =
             Deserialize::deserialize(deserializer)?;
         Ok(raw.map(|vec| {
-            vec.into_iter().map(|(origin, lines, columns)| {
-                SourceLocation { origin, columns, lines, _placeholder: () }
-            }).collect()
+            vec.into_iter()
+                .map(|(origin, lines, columns)| SourceLocation {
+                    origin,
+                    columns,
+                    lines,
+                    _placeholder: (),
+                })
+                .collect()
         }))
     }
 
@@ -104,7 +114,8 @@ pub(crate) mod call_stack_repr {
         stack: &Option<Vec<SourceLocation>>,
         serializer: S,
     ) -> result::Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         let raw: Option<Vec<_>> = stack.as_ref().map(|vec| {
             vec.iter()
@@ -153,13 +164,11 @@ pub struct Cause {
 }
 
 impl fmt::Display for Cause {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "code: {}, HTTP status: {}, extra: {}",
-            self.code,
-            self.http_status,
-            self.extra,
+            self.code, self.http_status, self.extra,
         )
     }
 }

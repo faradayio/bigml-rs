@@ -1,7 +1,7 @@
 //! Resource types manipulated by the BigML API.
 
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt};
 
 // We re-export everything from our support submodules.
@@ -75,7 +75,7 @@ pub trait Resource: fmt::Debug + DeserializeOwned + Serialize + 'static {
     ///
     /// TODO: Does this need to go in a separate trait in order to maintain
     /// trait object support?
-    fn status(&self) -> &Status;
+    fn status(&self) -> &dyn Status;
 }
 
 /// A value which can be updated using the BigML API. May be a `Resource` or a
@@ -149,7 +149,6 @@ pub struct ResourceCommon {
     //
     // TODO: The response is missing the `Z`, which makes chrono sad.
     //pub created: DateTime<UTC>,
-
     /// Was this created in development mode?
     pub dev: Option<bool>,
 
@@ -164,7 +163,6 @@ pub struct ResourceCommon {
     //
     // TODO: Define `Project` type and then enable this.
     //pub project: Id<Project>,
-
     /// Has this been shared using a private link?
     pub shared: bool,
 
@@ -178,7 +176,6 @@ pub struct ResourceCommon {
     //
     // TODO: The response is missing the `Z`, which makes chrono sad.
     //pub updated: DateTime<UTC>,
-
     /// Placeholder to allow extensibility without breaking the API.
     #[serde(skip)]
     _placeholder: (),

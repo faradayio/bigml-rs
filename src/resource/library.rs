@@ -35,19 +35,19 @@ pub struct Library {
 #[derive(Debug, Serialize)]
 pub struct Args {
     /// The category code which best describes this script.
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub category: Option<i64>,
 
     /// A human-readable description of this script.
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 
     /// A list of "library/..." identifiers to import.
-    #[serde(skip_serializing_if="Vec::is_empty")]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub imports: Vec<Id<Library>>,
 
     /// A human-readable name for this script.
-    #[serde(skip_serializing_if="Option::is_none")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
     /// The source code of this script.

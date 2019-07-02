@@ -49,20 +49,13 @@
 
 #[macro_use]
 extern crate bigml_derive;
-extern crate chrono;
+
 #[macro_use]
 extern crate failure;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
-extern crate mime;
-extern crate reqwest;
-extern crate serde;
-#[cfg_attr(test, macro_use)]
-extern crate serde_json;
-extern crate url;
-extern crate uuid;
 
 pub use client::Client;
 pub use errors::*;

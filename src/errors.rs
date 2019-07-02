@@ -25,15 +25,24 @@ pub enum Error {
     /// `Error::could_not_access_url` to handle various URL sanitization and
     /// security issues.
     #[fail(display = "error accessing '{}': {}", url, error)]
-    CouldNotAccessUrl { url: Url, /*#[cause]*/ error: failure::Error },
+    CouldNotAccessUrl {
+        url: Url,
+        /*#[cause]*/ error: failure::Error,
+    },
 
     /// We could not get an output value from a WhizzML script.
     #[fail(display = "could not get WhizzML output '{}': {}", name, error)]
-    CouldNotGetOutput { name: String, /*#[cause]*/ error: failure::Error },
+    CouldNotGetOutput {
+        name: String,
+        /*#[cause]*/ error: failure::Error,
+    },
 
     /// We could not read a file.
     #[fail(display = "could not read file {:?}: {}", path, error)]
-    CouldNotReadFile { path: PathBuf, /*#[cause]*/ error: failure::Error },
+    CouldNotReadFile {
+        path: PathBuf,
+        /*#[cause]*/ error: failure::Error,
+    },
 
     /// We could not access an output value of a WhizzML script.
     #[fail(display = "WhizzML output is not (yet?) available")]
@@ -50,7 +59,11 @@ pub enum Error {
 
     /// We received an unexpected HTTP status code.
     #[fail(display = "{} for {} ({})", status, url, body)]
-    UnexpectedHttpStatus { url: Url, status: reqwest::StatusCode, body: String },
+    UnexpectedHttpStatus {
+        url: Url,
+        status: reqwest::StatusCode,
+        body: String,
+    },
 
     /// We tried to create a BigML resource, but we failed. Display a dashboard
     /// URL to make it easy to look up the actual error.
@@ -63,12 +76,18 @@ pub enum Error {
     },
 
     /// We found a type mismatch deserializing a BigML resource ID.
-    #[fail(display = "Expected BigML resource ID starting with '{}', found '{}'", expected, found)]
-    WrongResourceType { expected: &'static str, found: String },
+    #[fail(
+        display = "Expected BigML resource ID starting with '{}', found '{}'",
+        expected, found
+    )]
+    WrongResourceType {
+        expected: &'static str,
+        found: String,
+    },
 
     /// Another kind of error occurred.
     #[fail(display = "{}", error)]
-    Other { /*#[cause]*/ error: failure::Error },
+    Other { /*#[cause]*/ error: failure::Error, },
 
     /// Add a hidden member for future API extensibility.
     #[doc(none)]
@@ -79,10 +98,7 @@ pub enum Error {
 impl Error {
     /// Construct an `Error::CouldNotAccessUrl` value, taking care to
     /// sanitize the URL query.
-    pub(crate) fn could_not_access_url<E>(
-        url: &Url,
-        error: E,
-    ) -> Error
+    pub(crate) fn could_not_access_url<E>(url: &Url, error: E) -> Error
     where
         E: Into<failure::Error>,
     {
@@ -92,10 +108,7 @@ impl Error {
         }
     }
 
-    pub(crate) fn could_not_get_output<E>(
-        name: &str,
-        error: E,
-    ) -> Error
+    pub(crate) fn could_not_get_output<E>(name: &str, error: E) -> Error
     where
         E: Into<failure::Error>,
     {
@@ -125,19 +138,25 @@ impl From<failure::Error> for Error {
 
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Error {
-        Error::Other { error: error.into() }
+        Error::Other {
+            error: error.into(),
+        }
     }
 }
 
 impl From<reqwest::Error> for Error {
     fn from(error: reqwest::Error) -> Error {
-        Error::Other { error: error.into() }
+        Error::Other {
+            error: error.into(),
+        }
     }
 }
 
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Error {
-        Error::Other { error: error.into() }
+        Error::Other {
+            error: error.into(),
+        }
     }
 }
 
@@ -172,5 +191,8 @@ fn url_without_api_key_is_sanitized() {
     let url = Url::parse("https://www.example.com/foo?a=b&api_key=12345")
         .expect("could not parse URL");
     let cleaned = url_without_api_key(&url);
-    assert_eq!(cleaned.as_str(), "https://www.example.com/foo?a=b&api_key=*****");
+    assert_eq!(
+        cleaned.as_str(),
+        "https://www.example.com/foo?a=b&api_key=*****"
+    );
 }

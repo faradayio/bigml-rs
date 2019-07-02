@@ -159,7 +159,11 @@ where
 {
     let deadline = options.timeout.map(|to| SystemTime::now() + to);
     let mut retry_interval = options.retry_interval;
-    trace!("waiting with deadline {:?}, initial interval {:?}", deadline, retry_interval);
+    trace!(
+        "waiting with deadline {:?}, initial interval {:?}",
+        deadline,
+        retry_interval
+    );
     let mut errors_seen = 0;
     loop {
         // Call the function we're waiting on.
@@ -169,7 +173,9 @@ where
                 return Ok(value);
             }
             WaitStatus::Waiting => trace!("waiting some more"),
-            WaitStatus::FailedTemporarily(ref e) if errors_seen < options.allowed_errors => {
+            WaitStatus::FailedTemporarily(ref e)
+                if errors_seen < options.allowed_errors =>
+            {
                 errors_seen += 1;
                 error!(
                     "got error, will retry ({}/{}): {}",
