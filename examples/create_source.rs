@@ -8,7 +8,7 @@ use std::path::Path;
 use std::process;
 
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
 
     let bigml_username = env::var("BIGML_USERNAME")
         .expect("pass BIGML_USERNAME as an environment variable");

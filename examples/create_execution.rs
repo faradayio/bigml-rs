@@ -58,7 +58,7 @@ fn usage() -> ! {
 }
 
 fn main() {
-    env_logger::init().unwrap();
+    env_logger::init();
 
     // Parse our command line options.
     let mut script_id = None;
@@ -95,7 +95,7 @@ fn main() {
     // Dispatch to our helper function and report any errors it returns.
     if let Err(err) = helper(&script_id, &inputs, &outputs) {
         eprint!("ERROR");
-        for e in err.causes() {
+        for e in err.iter_chain() {
             eprint!(": {}", e);
         }
         eprintln!("");
