@@ -1,6 +1,6 @@
 [package]
 name = "bigml"
-version = "0.1.4"
+version = "0.2.0"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 
 description = "Unofficial BigML client bindings"
@@ -15,7 +15,7 @@ edition = "2018"
 env_logger = "0.6"
 
 [dependencies]
-bigml_derive = { version = "0.1", path = "bigml_derive" }
+bigml_derive = { version = "0.2", path = "bigml_derive" }
 chrono = { version = "0.4", features = ["serde"] }
 failure = "0.1.1"
 lazy_static = "1.3"
