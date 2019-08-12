@@ -117,17 +117,6 @@ impl Error {
             error: error.into(),
         }
     }
-
-    pub(crate) fn could_not_read_file<P, E>(path: P, error: E) -> Error
-    where
-        P: Into<PathBuf>,
-        E: Into<failure::Error>,
-    {
-        Error::CouldNotReadFile {
-            path: path.into(),
-            error: error.into(),
-        }
-    }
 }
 
 impl From<failure::Error> for Error {

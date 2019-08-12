@@ -57,7 +57,9 @@ pub use self::source::Source;
 ///     _placeholder: (),
 /// }
 /// ```
-pub trait Resource: fmt::Debug + DeserializeOwned + Serialize + 'static {
+pub trait Resource:
+    fmt::Debug + DeserializeOwned + Send + Serialize + Sync + 'static
+{
     /// The prefix used for all IDs of this type.
     fn id_prefix() -> &'static str;
 

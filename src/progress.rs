@@ -3,7 +3,7 @@
 use crate::errors::*;
 
 /// A callback which we be callled every time we have a new `T` value.
-pub type ProgressCallback<'a, T> = dyn FnMut(&T) -> Result<()> + 'a;
+pub type ProgressCallback<'a, T> = dyn (FnMut(&T) -> Result<()>) + Send + Sync + 'a;
 
 /// Options specifying how to report progress.
 pub struct ProgressOptions<'a, T: 'static> {
