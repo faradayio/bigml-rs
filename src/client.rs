@@ -6,6 +6,7 @@ use mpart_async::{FileStream, MultipartRequest};
 use reqwest::{self, r#async as reqwest_async, StatusCode};
 use serde::de::DeserializeOwned;
 use serde_json;
+use std::error;
 use std::future::Future;
 use std::path::Path;
 use std::pin::Pin;
@@ -91,28 +92,25 @@ impl Client {
         self.wait(resource.id()).await
     }
 
-    /// Create a BigML data source using data from the specified path.  We
+    /// Create a BigML data source using data from the specified stream.  We
     /// stream the data over the network without trying to load it all into
-    /// memory.
-    #[allow(clippy::needless_lifetimes)]
-    pub async fn create_source_from_path<P>(&self, path: P) -> Result<Source>
+    /// memory at once.
+    pub async fn create_source_from_stream<S, E>(
+        &self,
+        filename: &str,
+        stream: S,
+    ) -> Result<Source>
     where
-        P: AsRef<Path>,
+        S: Stream<Item = Bytes, Error = E> + Send + Sync + 'static,
+        E: error::Error + Send + Sync + 'static,
     {
-        let path = path.as_ref();
-
         // Open up our file and add it to a multi-part request.
         let mut mpart = MultipartRequest::default();
-        mpart.add_stream(
-            "file",
-            &path.to_string_lossy(),
-            "application/octet-stream",
-            FileStream::new(&path),
-        );
+        mpart.add_stream("file", filename, "application/octet-stream", stream);
         let content_type =
             format!("multipart/form-data; boundary={}", mpart.get_boundary());
         let body = Box::new(mpart)
-            as Box<dyn stream::Stream<Item = Bytes, Error = _> + Send + 'static>;
+            as Box<dyn Stream<Item = _, Error = _> + Send + 'static>;
 
         // Post our request.
         let url = self.url("/source");
@@ -126,6 +124,20 @@ impl Client {
             .await
             .map_err(|e| Error::could_not_access_url(&url, e))?;
         self.handle_response_and_deserialize(&url, res).await
+    }
+
+    /// Create a BigML data source using data from the specified path.  We
+    /// stream the data over the network without trying to load it all into
+    /// memory at once.
+    #[allow(clippy::needless_lifetimes)]
+    pub async fn create_source_from_path<P>(&self, path: P) -> Result<Source>
+    where
+        P: AsRef<Path>,
+    {
+        let path = path.as_ref();
+        let stream = FileStream::new(&path);
+        let filename = path.to_string_lossy();
+        self.create_source_from_stream(&filename, stream).await
     }
 
     /// Create a BigML data source using data from the specified path.  We
