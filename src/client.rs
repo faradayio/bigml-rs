@@ -101,7 +101,7 @@ impl Client {
         stream: S,
     ) -> Result<Source>
     where
-        S: Stream<Item = Bytes, Error = E> + Send + Sync + 'static,
+        S: Stream<Item = Bytes, Error = E> + Send + 'static,
         E: error::Error + Send + Sync + 'static,
     {
         // Open up our file and add it to a multi-part request.
