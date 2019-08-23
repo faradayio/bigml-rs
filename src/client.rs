@@ -104,6 +104,8 @@ impl Client {
         S: Stream<Item = Bytes, Error = E> + Send + 'static,
         E: error::Error + Send + Sync + 'static,
     {
+        debug!("uploading {} from stream", filename);
+
         // Open up our file and add it to a multi-part request.
         let mut mpart = MultipartRequest::default();
         mpart.add_stream("file", filename, "application/octet-stream", stream);
