@@ -109,8 +109,8 @@ impl Client {
         mpart.add_stream("file", filename, "application/octet-stream", stream);
         let content_type =
             format!("multipart/form-data; boundary={}", mpart.get_boundary());
-        let body = Box::new(mpart)
-            as Box<dyn Stream<Item = _, Error = _> + Send + 'static>;
+        let body =
+            Box::new(mpart) as Box<dyn Stream<Item = _, Error = _> + Send + 'static>;
 
         // Post our request.
         let url = self.url("/source");
