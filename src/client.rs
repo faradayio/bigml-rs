@@ -50,7 +50,7 @@ impl Client {
         format!("username={}&api_key={}", self.username, self.api_key)
     }
 
-    /// Generate an authenticate URL with the specified path.
+    /// Generate an authenticated URL with the specified path.
     fn url(&self, path: &str) -> Url {
         let mut url: Url = BIGML_URL.clone();
         url.set_path(path);
@@ -95,6 +95,7 @@ impl Client {
     /// Create a BigML data source using data from the specified stream.  We
     /// stream the data over the network without trying to load it all into
     /// memory at once.
+    #[deprecated = "This won't work until BigML fixes Transfer-Encoding: chunked"]
     pub async fn create_source_from_stream<S, E>(
         &self,
         filename: &str,
@@ -131,7 +132,8 @@ impl Client {
     /// Create a BigML data source using data from the specified path.  We
     /// stream the data over the network without trying to load it all into
     /// memory at once.
-    #[allow(clippy::needless_lifetimes)]
+    #[allow(clippy::needless_lifetimes, deprecated)]
+    #[deprecated = "This won't work until BigML fixes Transfer-Encoding: chunked"]
     pub async fn create_source_from_path<P>(&self, path: P) -> Result<Source>
     where
         P: AsRef<Path>,
@@ -145,7 +147,8 @@ impl Client {
     /// Create a BigML data source using data from the specified path.  We
     /// stream the data over the network without trying to load it all into
     /// memory.
-    #[allow(clippy::needless_lifetimes)]
+    #[allow(clippy::needless_lifetimes, deprecated)]
+    #[deprecated = "This won't work until BigML fixes Transfer-Encoding: chunked"]
     pub async fn create_source_from_path_and_wait<P>(&self, path: P) -> Result<Source>
     where
         P: AsRef<Path>,
