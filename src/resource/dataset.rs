@@ -35,7 +35,9 @@ pub struct Dataset {
     /// like "preferred", so we represent it as a string.
     pub field_types: HashMap<String, u64>,
 
-    /// Metadata describing each field.
+    /// Metadata describing each field. Will be empty while object is being
+    /// created.
+    #[serde(default)]
     pub fields: HashMap<String, Field>,
 
     /// Field IDs included when building this dataset.
