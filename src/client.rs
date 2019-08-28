@@ -283,7 +283,7 @@ impl Client {
         let client = reqwest_async::Client::new();
         wait(
             &options,
-            || -> Pin<Box<dyn Future<Output = WaitStatus<_, Error>>>> {
+            || -> Pin<Box<dyn Future<Output = WaitStatus<_, Error>> + Send>> {
                 async {
                     let mut res = try_with_temporary_failure!(
                         client.get(url.clone()).send().compat().await
