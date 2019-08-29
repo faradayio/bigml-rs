@@ -13,10 +13,10 @@ use failure::{format_err, Error, ResultExt};
 use futures::{compat::Future01CompatExt, Future, FutureExt, TryFutureExt};
 use log::{debug, warn};
 use serde_json::Value;
-use std::{env, io::BufReader, pin::Pin, str::FromStr, sync::Arc};
+use std::{env, pin::Pin, str::FromStr, sync::Arc};
 use structopt::StructOpt;
 use tokio::{
-    codec::{BytesCodec, FramedWrite},
+    codec::{BytesCodec, FramedRead, FramedWrite, LinesCodec},
     io,
     prelude::{stream, Stream},
     runtime::Runtime,
@@ -133,7 +133,7 @@ async fn run_async(opt: Opt) -> Result<()> {
         Box::new(stream::iter_ok(datasets.into_iter()))
     } else {
         // Parse standard input as a stream of dataset IDs.
-        let lines = io::lines(BufReader::new(io::stdin()));
+        let lines = FramedRead::new(io::stdin(), LinesCodec::new());
         Box::new(lines.map_err(|e| -> Error { e.into() }))
     };
 
@@ -184,6 +184,8 @@ async fn resource_id_to_execution(
     opt: Arc<Opt>,
     resource: String,
 ) -> Result<Execution> {
+    debug!("running {} on {}", opt.script, resource);
+
     // Specify what script to run.
     let mut args = execution::Args::default();
     args.script = Some(opt.script.clone());
