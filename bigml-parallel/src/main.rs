@@ -196,7 +196,7 @@ async fn resource_id_to_execution(
     }
 
     // Specify the input dataset.
-    args.add_input(&opt.resource_input_name, resource)?;
+    args.add_input(&opt.resource_input_name, &resource)?;
 
     // Add any other inputs.
     for input in &opt.inputs {
@@ -214,6 +214,7 @@ async fn resource_id_to_execution(
     let client = new_client()?;
     let mut execution = client.create(&args).await?;
     execution = client.wait(&execution.id()).await?;
+    debug!("finished {} on {}", execution.id(), resource);
     Ok(execution)
 }
 
