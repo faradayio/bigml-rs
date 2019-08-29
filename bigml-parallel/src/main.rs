@@ -6,7 +6,6 @@ use bigml::{
     resource::{execution, Execution, Id, Resource, Script},
     Client,
 };
-use bytes::Bytes;
 use common_failures::{quick_main, Result};
 use env_logger;
 use failure::{format_err, Error, ResultExt};
@@ -16,9 +15,9 @@ use serde_json::Value;
 use std::{env, pin::Pin, str::FromStr, sync::Arc};
 use structopt::StructOpt;
 use tokio::{
-    codec::{BytesCodec, FramedRead, FramedWrite, LinesCodec},
+    codec::{FramedRead, FramedWrite, LinesCodec},
     io,
-    prelude::{stream, Stream},
+    prelude::{stream, Sink, Stream},
     runtime::Runtime,
 };
 
@@ -142,48 +141,38 @@ async fn run_async(opt: Opt) -> Result<()> {
     let opt = Arc::new(opt);
 
     // Transform our stream of IDs into a stream of _futures_, each of which will
-    // return an `Execution` object from BigML.
+    // return a JSON-serialized `Execution` object from BigML.
     let opt2 = opt.clone();
-    let execution_futures: BoxStream<BoxFuture<Execution>> =
+    let execution_futures: BoxStream<BoxFuture<String>> =
         Box::new(dataset_ids.map(move |resource| {
-            resource_id_to_execution(opt2.clone(), resource).boxed()
+            resource_id_to_execution_json(opt2.clone(), resource).boxed()
         }));
 
     // Now turn the stream of futures into a stream of executions, using
     // `buffer_unordered` to execute up to `opt.max_tasks` in parallel. This is
     // basically the "payoff" for all the async code up above, and it is
     // wonderful.
-    let executions: BoxStream<Execution> = Box::new(
+    let executions: BoxStream<String> = Box::new(
         execution_futures
             // Convert back to legacy `tokio::Future` for `buffered_unordered`.
             .map(|fut| fut.compat())
             .buffer_unordered(opt.max_tasks),
     );
 
-    // Convert our `Execution` objects to raw JSON data, with one JSON value per
-    // line.
-    let jsons: BoxStream<Bytes> = Box::new(executions.and_then(|execution| {
-        let mut bytes = serde_json::to_vec(&execution)?;
-        bytes.push(b'\n');
-        Ok(Bytes::from(bytes))
-    }));
-
-    // Dump our stream of raw JSON chunks to standard output. We used
-    // `FramedWrite`, because that's the idiomatic way of dumping a `tokio`
-    // stream of values to an `AsyncWrite`.
-    //
-    // TODO: Make sure this flushes after each chunk!
-    let stdout_sink = FramedWrite::new(io::stdout(), BytesCodec::new());
-    jsons.forward(stdout_sink).compat().await?;
+    // Copy our stream of raw JSON chunks to standard output. This is a little
+    // bit cumbersome in `tokio` 1.x because we can't loop over a stream. We
+    // could use `forward`, but it buffers more aggressively than we want.
+    let stdout = FramedWrite::new(io::stdout(), LinesCodec::new());
+    executions.forward(stdout).compat().await?;
     Ok(())
 }
 
 /// Use our command-line options and a resource ID to create and run a BigML
 /// execution.
-async fn resource_id_to_execution(
+async fn resource_id_to_execution_json(
     opt: Arc<Opt>,
     resource: String,
-) -> Result<Execution> {
+) -> Result<String> {
     debug!("running {} on {}", opt.script, resource);
 
     // Specify what script to run.
@@ -215,7 +204,7 @@ async fn resource_id_to_execution(
     let mut execution = client.create(&args).await?;
     execution = client.wait(&execution.id()).await?;
     debug!("finished {} on {}", execution.id(), resource);
-    Ok(execution)
+    Ok(serde_json::to_string(&execution)?)
 }
 
 /// Create a BigML client using environment varaibles to authenticate.
