@@ -8,8 +8,7 @@ use syn::{Attribute, DeriveInput, Lit, Meta, MetaNameValue};
 /// Do the actual code generation for a `Resource`.
 pub(crate) fn derive(ast: &DeriveInput) -> TokenStream {
     let name = &ast.ident;
-    let (impl_generics, ty_generics, where_clause) =
-        ast.generics.split_for_impl();
+    let (impl_generics, ty_generics, where_clause) = ast.generics.split_for_impl();
     let api_name = get_api_name(&ast.attrs);
     quote! {
         impl #impl_generics Resource for #name #ty_generics #where_clause {
@@ -41,7 +40,8 @@ pub(crate) fn derive(ast: &DeriveInput) -> TokenStream {
 fn get_api_name(attrs: &[Attribute]) -> Lit {
     for attr in attrs {
         // Parse the `#[...]` expression, called a "meta" in Rust's grammar.
-        let meta = attr.interpret_meta()
+        let meta = attr
+            .interpret_meta()
             .expect("Invalid `api_name`, try #[api_name = \"my_resource\"]");
         if meta.name() == "api_name" {
             match meta {

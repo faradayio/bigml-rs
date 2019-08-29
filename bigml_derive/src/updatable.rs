@@ -42,7 +42,9 @@ fn fields_for_update_type(ast: &DeriveInput) -> Vec<TokenStream> {
             if let Some(field_opts) = updatable_field_options(field) {
                 let attrs = &field_opts.attrs;
                 let vis = &field.vis;
-                let name = field.ident.as_ref()
+                let name = field
+                    .ident
+                    .as_ref()
                     .expect("Cannot `#[derive(Updatable)]` for tuple struct");
                 let ty = &field.ty;
                 let comment = format!("New value for `{}` (optional).", name);
@@ -84,15 +86,21 @@ fn updatable_field_options(field: &Field) -> Option<UpdatableFieldOptions> {
                 // We have `#[updatable]`, do nothing.
                 Meta::Word(_) => {}
                 // We have `#[updatable(..)]`, look for nested options.
-                Meta::List(MetaList { nested: options, .. }) => {
+                Meta::List(MetaList {
+                    nested: options, ..
+                }) => {
                     for option in options {
                         match option {
                             // We have a `flatten` option.
-                            NestedMeta::Meta(ref flatten_meta) if flatten_meta.name() == "flatten" => {
+                            NestedMeta::Meta(ref flatten_meta)
+                                if flatten_meta.name() == "flatten" =>
+                            {
                                 if let Meta::Word(_) = flatten_meta {
                                     flatten = true;
                                 } else {
-                                    panic!("#[updatable(flatten)] may not have arguments");
+                                    panic!(
+                                        "#[updatable(flatten)] may not have arguments"
+                                    );
                                 }
                             }
 
@@ -101,10 +109,13 @@ fn updatable_field_options(field: &Field) -> Option<UpdatableFieldOptions> {
                             //
                             // TODO: Do we want to keep this? It's not being used, but it's
                             // potentially quite useful.
-                            NestedMeta::Meta(ref attr_meta) if attr_meta.name() == "attr" => {
+                            NestedMeta::Meta(ref attr_meta)
+                                if attr_meta.name() == "attr" =>
+                            {
                                 match attr_meta {
                                     Meta::List(MetaList {
-                                        nested: attr_values, ..
+                                        nested: attr_values,
+                                        ..
                                     }) => {
                                         for attr_value in attr_values {
                                             // Wrap in `#[..]`.
@@ -113,7 +124,9 @@ fn updatable_field_options(field: &Field) -> Option<UpdatableFieldOptions> {
                                             });
                                         }
                                     }
-                                    _ => panic!("cannot parse `#[updatable(attr(..))]`"),
+                                    _ => {
+                                        panic!("cannot parse `#[updatable(attr(..))]`")
+                                    }
                                 }
                             }
                             _ => {
