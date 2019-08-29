@@ -52,7 +52,8 @@ static WHIZZML_SCRIPT: &str = r#"
 ;; Output: dataset
 ;; Output: n_times_2
 
-(define dataset (create-and-wait-dataset {"source" source}))
+(define dataset
+  (create-and-wait-dataset {"source" source "name" "bigml-parallel test"}))
 (define n_times_2 (* n 2))
 "#;
 
@@ -80,8 +81,10 @@ fn parallel_executions() {
 
         // Upload our WhizzML script object.
         let mut args = script::Args::new(WHIZZML_SCRIPT);
-        args.inputs.push(script::Input::new("source", script::Type::ResourceId));
-        args.inputs.push(script::Input::new("n", script::Type::Integer));
+        args.inputs
+            .push(script::Input::new("source", script::Type::ResourceId));
+        args.inputs
+            .push(script::Input::new("n", script::Type::Integer));
         let script = client.create_and_wait(&args).await?;
 
         Ok((sources, script.id().to_owned()))
