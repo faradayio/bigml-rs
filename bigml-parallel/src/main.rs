@@ -3,7 +3,7 @@
 #![feature(async_await)]
 
 use bigml::{
-    resource::{execution, Dataset, Execution, Id, Resource, Script},
+    resource::{execution, Execution, Id, Resource, Script},
     Client,
 };
 use bytes::Bytes;
@@ -32,10 +32,10 @@ type BoxFuture<T> = Pin<Box<dyn Future<Output = Result<T>> + Send + 'static>>;
 #[derive(Debug, StructOpt)]
 #[structopt(
     name = "bigml-parallel",
-    about = "Execute WhizML script in parallel over one or more BigML datasets"
+    about = "Execute WhizzML script in parallel over one or more BigML resources"
 )]
 struct Opt {
-    /// The WhizML script ID to run.
+    /// The WhizzML script ID to run.
     #[structopt(long = "script", short = "s")]
     script: Id<Script>,
 
@@ -43,14 +43,18 @@ struct Opt {
     #[structopt(long = "name", short = "n")]
     name: Option<String>,
 
-    /// The dataset IDs to process. (Alternatively, pipe dataset IDs on standard
+    /// The resource IDs to process. (Alternatively, pipe resource IDs on standard
     /// input, one per line.)
-    #[structopt(long = "dataset", short = "d")]
-    datasets: Vec<Id<Dataset>>,
+    #[structopt(long = "resource", short = "r")]
+    resources: Vec<String>,
 
     /// The input name used to pass the dataset.
-    #[structopt(long = "dataset-input", default_value = "dataset")]
-    dataset_arg: String,
+    #[structopt(
+        long = "resource-input-name",
+        short = "R",
+        default_value = "resource"
+    )]
+    resource_input_name: String,
 
     /// Extra inputs to our WhizzML script, passed as "name=value". These
     /// will be parsed as JSON if possible, or treated as strings otherwise.
@@ -123,17 +127,14 @@ fn run() -> Result<()> {
 async fn run_async(opt: Opt) -> Result<()> {
     // We want to represent our input dataset IDs as an asynchronous stream,
     // which will make it very easy to have controlled parallel execution.
-    let dataset_ids: BoxStream<Id<Dataset>> = if !opt.datasets.is_empty() {
+    let dataset_ids: BoxStream<String> = if !opt.resources.is_empty() {
         // Turn our `--dataset` arguments into a stream.
-        let datasets = opt.datasets.clone();
+        let datasets = opt.resources.clone();
         Box::new(stream::iter_ok(datasets.into_iter()))
     } else {
         // Parse standard input as a stream of dataset IDs.
         let lines = io::lines(BufReader::new(io::stdin()));
-        Box::new(lines.map_err(|e| -> Error { e.into() }).and_then(|line| {
-            let fut = async move { Ok(line.parse::<Id<Dataset>>()?) };
-            fut.boxed().compat()
-        }))
+        Box::new(lines.map_err(|e| -> Error { e.into() }))
     };
 
     // Wrap our command line arguments in a thread-safe reference counter, so
@@ -143,9 +144,10 @@ async fn run_async(opt: Opt) -> Result<()> {
     // Transform our stream of IDs into a stream of _futures_, each of which will
     // return an `Execution` object from BigML.
     let opt2 = opt.clone();
-    let execution_futures: BoxStream<BoxFuture<Execution>> = Box::new(
-        dataset_ids.map(move |id| dataset_id_to_output(opt2.clone(), id).boxed()),
-    );
+    let execution_futures: BoxStream<BoxFuture<Execution>> =
+        Box::new(dataset_ids.map(move |resource| {
+            resource_id_to_execution(opt2.clone(), resource).boxed()
+        }));
 
     // Now turn the stream of futures into a stream of executions, using
     // `buffer_unordered` to execute up to `opt.max_tasks` in parallel. This is
@@ -176,7 +178,12 @@ async fn run_async(opt: Opt) -> Result<()> {
     Ok(())
 }
 
-async fn dataset_id_to_output(opt: Arc<Opt>, id: Id<Dataset>) -> Result<Execution> {
+/// Use our command-line options and a resource ID to create and run a BigML
+/// execution.
+async fn resource_id_to_execution(
+    opt: Arc<Opt>,
+    resource: String,
+) -> Result<Execution> {
     // Specify what script to run.
     let mut args = execution::Args::default();
     args.script = Some(opt.script.clone());
@@ -187,7 +194,7 @@ async fn dataset_id_to_output(opt: Arc<Opt>, id: Id<Dataset>) -> Result<Executio
     }
 
     // Specify the input dataset.
-    args.add_input(&opt.dataset_arg, id)?;
+    args.add_input(&opt.resource_input_name, resource)?;
 
     // Add any other inputs.
     for input in &opt.inputs {

@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 edition = "2018"
 
+[dev-dependencies]
+cli_test_dir = "0.1.5"
+
 [dependencies]
 bigml = { path = "../bigml" }
 bytes = "0.4.12"
