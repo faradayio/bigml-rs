@@ -3,7 +3,7 @@
 #![feature(async_await)]
 
 use bigml::{
-    resource::{execution, Execution, Id, Resource, Script},
+    resource::{execution, Id, Resource, Script},
     Client,
 };
 use common_failures::{quick_main, Result};
@@ -17,7 +17,7 @@ use structopt::StructOpt;
 use tokio::{
     codec::{FramedRead, FramedWrite, LinesCodec},
     io,
-    prelude::{stream, Sink, Stream},
+    prelude::{stream, Stream},
     runtime::Runtime,
 };
 
