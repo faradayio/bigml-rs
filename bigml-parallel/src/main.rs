@@ -8,11 +8,10 @@ use bigml::{
 };
 use common_failures::{quick_main, Result};
 use env_logger;
-use failure::{format_err, Error, ResultExt};
+use failure::{Error, ResultExt};
 use futures::{compat::Future01CompatExt, Future, FutureExt, TryFutureExt};
-use log::{debug, warn};
-use serde_json::Value;
-use std::{env, pin::Pin, str::FromStr, sync::Arc};
+use log::debug;
+use std::{env, pin::Pin, sync::Arc};
 use structopt::StructOpt;
 use tokio::{
     codec::{FramedRead, FramedWrite, LinesCodec},
@@ -21,8 +20,10 @@ use tokio::{
     runtime::Runtime,
 };
 
+mod execution_input;
 mod line_delimited_json_codec;
 
+use execution_input::ExecutionInput;
 use line_delimited_json_codec::LineDelimitedJsonCodec;
 
 /// Our standard stream type, containing values of type `T`.
@@ -62,7 +63,7 @@ struct Opt {
     /// Extra inputs to our WhizzML script, specified as "name=value". These
     /// will be parsed as JSON if possible, or treated as strings otherwise.
     #[structopt(long = "input", short = "i")]
-    inputs: Vec<Input>,
+    inputs: Vec<ExecutionInput>,
 
     /// Expected outputs to our WhizzML script, specified as "name".
     #[structopt(long = "output", short = "o")]
@@ -71,41 +72,6 @@ struct Opt {
     /// How many BigML tasks should we use at a time?
     #[structopt(long = "max-tasks", short = "J", default_value = "2")]
     max_tasks: usize,
-}
-
-/// An input argument.
-#[derive(Debug)]
-struct Input {
-    /// The name of this input.
-    name: String,
-
-    /// The JSON value of this input.
-    value: Value,
-}
-
-/// Declare a `FromStr` implementation for `Input` so that `structopt` can parse
-/// command-line arguments directly into `Input` values.
-impl FromStr for Input {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        let split = s.splitn(2, '=').collect::<Vec<&str>>();
-        if split.len() != 2 {
-            return Err(format_err!("input {:?} must have form \"key=value\"", s,));
-        }
-        let name = split[0].to_owned();
-        let value = match serde_json::from_str(split[1]) {
-            Ok(value) => value,
-            Err(err) => {
-                warn!(
-                    "could not parse input {:?} as JSON (treating as string): {}",
-                    s, err,
-                );
-                Value::String(split[1].to_owned())
-            }
-        };
-        Ok(Input { name, value })
-    }
 }
 
 // Generate a `main` function that prints out pretty errors.
