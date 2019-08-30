@@ -9,6 +9,7 @@ cli_test_dir = "0.1.5"
 
 [dependencies]
 bigml = { path = "../bigml" }
+bytes = "0.4.12"
 common_failures = "0.1.1"
 env_logger = "0.6"
 failure = "0.1.5"
