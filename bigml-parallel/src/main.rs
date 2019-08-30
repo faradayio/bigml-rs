@@ -59,17 +59,16 @@ struct Opt {
     )]
     resource_input_name: String,
 
-    /// Extra inputs to our WhizzML script, passed as "name=value". These
+    /// Extra inputs to our WhizzML script, specified as "name=value". These
     /// will be parsed as JSON if possible, or treated as strings otherwise.
     #[structopt(long = "input", short = "i")]
     inputs: Vec<Input>,
 
-    /// Expected outputs to our WhizzML script, passed as "name".
+    /// Expected outputs to our WhizzML script, specified as "name".
     #[structopt(long = "output", short = "o")]
     outputs: Vec<String>,
 
-    /// How many BigML tasks should we use at a time? We default to 2, because
-    /// that's what the free plan currently advertises.
+    /// How many BigML tasks should we use at a time?
     #[structopt(long = "max-tasks", short = "J", default_value = "2")]
     max_tasks: usize,
 }

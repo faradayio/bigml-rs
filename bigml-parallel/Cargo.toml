@@ -11,6 +11,8 @@ cli_test_dir = "0.1.5"
 bigml = { path = "../bigml" }
 bytes = "0.4.12"
 common_failures = "0.1.1"
+# This makes the executable bigger, but it makes --help much nicer.
+clap = { version = "2", features = ["wrap_help"] }
 env_logger = "0.6"
 failure = "0.1.5"
 futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
