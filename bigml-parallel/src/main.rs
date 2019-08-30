@@ -128,12 +128,12 @@ fn run() -> Result<()> {
 /// And finally, a third `main` function, but this time asynchronous. This runs
 /// the actual BigML script executions using the configuration in `opt`.
 async fn run_async(opt: Opt) -> Result<()> {
-    // We want to represent our input dataset IDs as an asynchronous stream,
+    // We want to represent our input resource IDs as an asynchronous stream,
     // which will make it very easy to have controlled parallel execution.
-    let dataset_ids: BoxStream<String> = if !opt.resources.is_empty() {
-        // Turn our `--dataset` arguments into a stream.
-        let datasets = opt.resources.clone();
-        Box::new(stream::iter_ok(datasets.into_iter()))
+    let resources: BoxStream<String> = if !opt.resources.is_empty() {
+        // Turn our `--resource` arguments into a stream.
+        let resources = opt.resources.clone();
+        Box::new(stream::iter_ok(resources.into_iter()))
     } else {
         // Parse standard input as a stream of dataset IDs.
         let lines = FramedRead::new(io::stdin(), LinesCodec::new());
@@ -148,7 +148,7 @@ async fn run_async(opt: Opt) -> Result<()> {
     // return an `Execution` object from BigML.
     let opt2 = opt.clone();
     let execution_futures: BoxStream<BoxFuture<Execution>> =
-        Box::new(dataset_ids.map(move |resource| {
+        Box::new(resources.map(move |resource| {
             resource_id_to_execution(opt2.clone(), resource).boxed()
         }));
 
