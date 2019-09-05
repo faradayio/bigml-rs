@@ -1,6 +1,6 @@
 [package]
 name = "bigml_derive"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 
 description = "Internal `derive` support for unofficial BigML client bindings"
