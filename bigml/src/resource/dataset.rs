@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use super::id::*;
 use super::source::Field;
 use super::status::*;
-use super::{Resource, ResourceCommon};
+use super::{Resource, ResourceCommon, Source};
 
 /// A BigML dataset. Basically a table of data with named columns.
 ///
@@ -35,7 +35,9 @@ pub struct Dataset {
     /// like "preferred", so we represent it as a string.
     pub field_types: HashMap<String, u64>,
 
-    /// Metadata describing each field.
+    /// Metadata describing each field. Will be empty while object is being
+    /// created.
+    #[serde(default)]
     pub fields: HashMap<String, Field>,
 
     /// Field IDs included when building this dataset.
@@ -47,4 +49,29 @@ pub struct Dataset {
     /// Placeholder to allow extensibility without breaking the API.
     #[serde(skip)]
     _placeholder: (),
+}
+
+/// Arguments used to create a dataset.
+#[derive(Debug, Serialize)]
+pub struct Args {
+    /// The ID of the BigML `Source` from which to import data.
+    pub source: Id<Source>,
+
+    /// Placeholder to allow extensibility without breaking the API.
+    #[serde(skip)]
+    _placeholder: (),
+}
+
+impl Args {
+    /// Create a new `Args`.
+    pub fn from_source(source: Id<Source>) -> Args {
+        Args {
+            source,
+            _placeholder: (),
+        }
+    }
+}
+
+impl super::Args for Args {
+    type Resource = Dataset;
 }

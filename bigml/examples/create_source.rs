@@ -2,10 +2,12 @@ use bigml;
 use env_logger;
 
 use bigml::resource::Resource;
+use futures::{FutureExt, TryFutureExt};
 use std::env;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process;
+use tokio::prelude::*;
 
 fn main() {
     env_logger::init();
@@ -27,9 +29,15 @@ fn main() {
         .expect("can't create bigml::Client");
     let initial_response = client
         .create_source_from_path(&path)
+        .boxed()
+        .compat()
+        .wait()
         .expect("can't create source");
     let response = client
         .wait(initial_response.id())
+        .boxed()
+        .compat()
+        .wait()
         .expect("error waiting for resource");
 
     println!("{:#?}", &response);

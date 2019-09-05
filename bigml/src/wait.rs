@@ -1,10 +1,12 @@
 //! Utilities for waiting, timeouts and error retries.
 
+use futures::compat::Future01CompatExt;
 use std::cmp::max;
 use std::fmt::Display;
+use std::future::Future;
 use std::result;
-use std::thread::sleep;
 use std::time::{Duration, SystemTime};
+use tokio_timer::Timer;
 
 use crate::errors::*;
 
@@ -135,15 +137,18 @@ impl<T, E> From<E> for WaitStatus<T, E> {
 /// or a timeout. Honors `WaitOptions`.
 ///
 /// ```
+/// # #![feature(async_await)]
 /// # extern crate bigml;
 /// # extern crate failure;
+/// # use futures::{FutureExt, TryFutureExt};
+/// # use tokio::prelude::*;
 /// # fn main() {
 /// use bigml::wait::{wait, WaitOptions, WaitStatus};
 /// use failure::Error;
 ///
-/// let value = wait::<_, failure::Error, _>(&WaitOptions::default(), || {
-///     WaitStatus::Finished("my value")
-/// }).expect("an error occured while waiting");
+/// let value = wait::<_, failure::Error, _, _>(&WaitOptions::default(), || {
+///     async { WaitStatus::Finished("my value") }
+/// }).boxed().compat().wait().expect("an error occured while waiting");
 ///
 /// assert_eq!(value, "my value");
 /// # }
@@ -151,9 +156,11 @@ impl<T, E> From<E> for WaitStatus<T, E> {
 ///
 /// If you return `Ok(WaitStatus::Waiting)` instead, this function will wait
 /// some number of seconds, and then try again.
-pub fn wait<T, E, F>(options: &WaitOptions, mut f: F) -> result::Result<T, E>
+#[allow(clippy::needless_lifetimes)]
+pub async fn wait<T, E, F, R>(options: &WaitOptions, mut f: F) -> result::Result<T, E>
 where
-    F: FnMut() -> WaitStatus<T, E>,
+    F: FnMut() -> R,
+    R: Future<Output = WaitStatus<T, E>>,
     E: Display,
     Error: Into<E>,
 {
@@ -164,10 +171,11 @@ where
         deadline,
         retry_interval
     );
+    let timer = Timer::default();
     let mut errors_seen = 0;
     loop {
         // Call the function we're waiting on.
-        match f() {
+        match f().await {
             WaitStatus::Finished(value) => {
                 trace!("wait finished successfully");
                 return Ok(value);
@@ -206,7 +214,8 @@ where
         }
 
         // Sleep until our next call.
-        sleep(max(Duration::from_secs(MIN_SLEEP_SECS), retry_interval));
+        let duration = max(Duration::from_secs(MIN_SLEEP_SECS), retry_interval);
+        timer.sleep(duration).compat().await.expect("timer failed");
 
         // Update retry interval.
         match options.backoff_type {

@@ -175,10 +175,10 @@ impl SourceId {
     }
 
     /// Download the corresponding source code.
-    pub fn fetch_source_code(&self, client: &Client) -> Result<String> {
+    pub async fn fetch_source_code(&self, client: &Client) -> Result<String> {
         match *self {
-            SourceId::Library(ref id) => Ok(client.fetch(id)?.source_code),
-            SourceId::Script(ref id) => Ok(client.fetch(id)?.source_code),
+            SourceId::Library(ref id) => Ok(client.fetch(id).await?.source_code),
+            SourceId::Script(ref id) => Ok(client.fetch(id).await?.source_code),
         }
     }
 }

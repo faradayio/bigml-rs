@@ -6,11 +6,13 @@ extern crate log;
 
 use bigml::resource;
 use failure::ResultExt;
+use futures::{FutureExt, TryFutureExt};
 use std::env;
 use std::io::{self, Write};
 use std::process;
 use std::result;
 use std::str::FromStr;
+use tokio::prelude::*;
 
 type Result<T> = result::Result<T, failure::Error>;
 
@@ -41,7 +43,7 @@ fn helper(
     }
 
     // Execute the script, wait for it to complete, and print the result.
-    let execution = client.create_and_wait(&args)?;
+    let execution = client.create_and_wait(&args).boxed().compat().wait()?;
     println!("{:#?}", execution);
 
     Ok(())

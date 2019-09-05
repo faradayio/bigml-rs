@@ -26,7 +26,7 @@ pub struct Source {
     pub status: GenericStatus,
 
     /// The name of the file uploaded.
-    pub file_name: String,
+    pub file_name: Option<String>,
 
     /// An MD5 hash of the uploaded file.
     pub md5: String,
@@ -53,10 +53,19 @@ pub struct Source {
 #[derive(Debug, Serialize)]
 pub struct Args {
     /// The URL of the data source.
-    pub remote: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub remote: Option<String>,
+
+    /// The raw data to use.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<String>,
 
     /// Set to true if you want to avoid date expansion into year, day of week, etc.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disable_datetime: Option<bool>,
+
+    /// The name of this source.
+    pub name: Option<String>,
 
     /// Placeholder to allow extensibility without breaking the API.
     #[serde(skip)]
@@ -64,11 +73,24 @@ pub struct Args {
 }
 
 impl Args {
-    /// Create a new `Args`.
-    pub fn new<S: Into<String>>(remote: S) -> Args {
+    /// Create a new `Args` from a remote data source.
+    pub fn remote<S: Into<String>>(remote: S) -> Args {
         Args {
-            remote: remote.into(),
+            remote: Some(remote.into()),
+            data: None,
             disable_datetime: None,
+            name: None,
+            _placeholder: (),
+        }
+    }
+
+    /// Create a new `Args` from a small amount of inline data.
+    pub fn data<S: Into<String>>(data: S) -> Args {
+        Args {
+            remote: None,
+            data: Some(data.into()),
+            disable_datetime: None,
+            name: None,
             _placeholder: (),
         }
     }

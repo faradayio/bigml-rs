@@ -8,10 +8,10 @@
 //! our [GitHub repository][] for more information.
 //!
 //! ```no_run(
-//! # extern crate bigml;
-//! #
 //! use bigml::{Client, resource::{execution, Id, Script}};
+//! use futures::{FutureExt, TryFutureExt};
 //! use std::{path::Path, str::FromStr};
+//! use tokio::prelude::*;
 //!
 //! # fn main() -> bigml::Result<()> {
 //! #
@@ -24,7 +24,10 @@
 //! let client = bigml::Client::new(username, api_key)?;
 //!
 //! // Create a source.
-//! let source = client.create_source_from_path_and_wait(path)?;
+//! let source = client.create_source_from_path_and_wait(path)
+//!   .boxed()
+//!   .compat()
+//!   .wait()?;
 //! println!("{:?}", source);
 //!
 //! // Execute the script.
@@ -32,7 +35,10 @@
 //! args.set_script(script_id);
 //! args.add_input("source-id", &source.resource)?;
 //! args.add_output("my-output");
-//! let execution = client.create_and_wait(&args)?;
+//! let execution = client.create_and_wait(&args)
+//!   .boxed()
+//!   .compat()
+//!   .wait()?;
 //! println!("{:?}", execution);
 //! #
 //! #   Ok(())
@@ -46,6 +52,7 @@
 //! [example code]: https://github.com/faradayio/bigml-rs/tree/master/examples
 
 #![warn(missing_docs)]
+#![feature(async_await)]
 
 #[macro_use]
 extern crate bigml_derive;
@@ -66,6 +73,5 @@ pub use wait::WaitOptions;
 pub mod wait;
 mod client;
 mod errors;
-mod multipart_form_data;
 mod progress;
 pub mod resource;
