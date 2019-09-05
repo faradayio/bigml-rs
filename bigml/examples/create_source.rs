@@ -1,3 +1,7 @@
+// This demo script doesn't currently work, because it relies on
+// `create_source_from_path`.
+#![allow(deprecated)]
+
 use bigml;
 use env_logger;
 
