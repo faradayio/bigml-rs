@@ -57,6 +57,10 @@ pub struct Args {
     /// The ID of the BigML `Source` from which to import data.
     pub source: Id<Source>,
 
+    /// The name of this dataset.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
     /// Placeholder to allow extensibility without breaking the API.
     #[serde(skip)]
     _placeholder: (),
@@ -67,6 +71,7 @@ impl Args {
     pub fn from_source(source: Id<Source>) -> Args {
         Args {
             source,
+            name: None,
             _placeholder: (),
         }
     }
