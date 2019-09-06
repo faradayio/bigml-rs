@@ -15,7 +15,7 @@ edition = "2018"
 env_logger = "0.6"
 
 [dependencies]
-bigml_derive = { version = "0.2", path = "../bigml_derive" }
+bigml_derive = { version = "0.2.1", path = "../bigml_derive" }
 bytes = "0.4.12"
 chrono = { version = "0.4", features = ["serde"] }
 failure = "0.1.1"
