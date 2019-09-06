@@ -135,7 +135,7 @@ async fn run_async(opt: Opt) -> Result<()> {
     //
     // TODO: `forward` may also have weird buffering behavior.
     let stdout = FramedWrite::new(io::stdout(), LineDelimitedJsonCodec::new());
-    executions.forward(stdout).compat().await?;
+    let (_executions, _stdout) = executions.forward(stdout).compat().await?;
     Ok(())
 }
 
