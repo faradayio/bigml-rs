@@ -65,6 +65,7 @@ pub struct Args {
     pub disable_datetime: Option<bool>,
 
     /// The name of this source.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
     /// Placeholder to allow extensibility without breaking the API.
