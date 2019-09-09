@@ -137,7 +137,6 @@ impl<T, E> From<E> for WaitStatus<T, E> {
 /// or a timeout. Honors `WaitOptions`.
 ///
 /// ```
-/// # #![feature(async_await)]
 /// # extern crate bigml;
 /// # extern crate failure;
 /// # use futures::{FutureExt, TryFutureExt};

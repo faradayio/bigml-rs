@@ -52,7 +52,6 @@
 //! [example code]: https://github.com/faradayio/bigml-rs/tree/master/examples
 
 #![warn(missing_docs)]
-#![feature(async_await)]
 
 #[macro_use]
 extern crate bigml_derive;

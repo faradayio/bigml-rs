@@ -1,7 +1,5 @@
 //! A CLI tool for executing BigML jobs in parallel.
 
-#![feature(async_await)]
-
 use bigml::{
     resource::{execution, Execution, Id, Resource, Script},
     Client,

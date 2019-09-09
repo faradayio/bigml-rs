@@ -1,7 +1,5 @@
 //! Integration tests for the entire `bigml-parallel` executable.
 
-#![feature(async_await)]
-
 use bigml::{
     resource::{script, source, Execution, Resource, StatusCode},
     Client,
