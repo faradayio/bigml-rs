@@ -157,7 +157,7 @@ pub struct Cause {
     pub extra: serde_json::Value,
 
     /// The HTTP status related to the underlying error.
-    pub http_status: u16,
+    pub http_status: Option<u16>,
 
     /// Placeholder to allow extensibility without breaking the API.
     #[serde(skip)]
@@ -166,11 +166,11 @@ pub struct Cause {
 
 impl fmt::Display for Cause {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "code: {}, HTTP status: {}, extra: {}",
-            self.code, self.http_status, self.extra,
-        )
+        write!(f, "code: {}", self.code)?;
+        if let Some(http_status) = self.http_status {
+            write!(f, ", HTTP status: {}", http_status)?;
+        }
+        write!(f, ", extra: {}", self.extra,)
     }
 }
 
