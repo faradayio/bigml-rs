@@ -104,6 +104,7 @@ fn parallel_executions() {
         .args(&["-i", "n=2"])
         .args(&["-o", "dataset"])
         .args(&["-o", "n_times_2"])
+        .args(&["--tag", "bigml-parallel:test"])
         .output_with_stdin(&input)
         .tee_output()
         .expect("error running bigml-parallel");

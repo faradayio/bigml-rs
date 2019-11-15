@@ -70,6 +70,10 @@ struct Opt {
     /// How many BigML tasks should we use at a time?
     #[structopt(long = "max-tasks", short = "J", default_value = "2")]
     max_tasks: usize,
+
+    /// Apply a tag to the BigML resources we create.
+    #[structopt(long = "tag")]
+    tags: Vec<String>,
 }
 
 // Generate a `main` function that prints out pretty errors.
@@ -166,6 +170,9 @@ async fn resource_id_to_execution(
     for output in &opt.outputs {
         args.add_output(output);
     }
+
+    // Add tags.
+    args.tags = opt.tags.clone();
 
     // Execute our script, retrying if needed.
     //
