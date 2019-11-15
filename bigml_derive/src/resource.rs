@@ -41,9 +41,9 @@ fn get_api_name(attrs: &[Attribute]) -> Lit {
     for attr in attrs {
         // Parse the `#[...]` expression, called a "meta" in Rust's grammar.
         let meta = attr
-            .interpret_meta()
+            .parse_meta()
             .expect("Invalid `api_name`, try #[api_name = \"my_resource\"]");
-        if meta.name() == "api_name" {
+        if meta.path().is_ident("api_name") {
             match meta {
                 Meta::NameValue(MetaNameValue { lit, .. }) => return lit,
                 _ => panic!("Invalid `api_name`, try #[api_name = \"my_resource\"]"),

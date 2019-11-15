@@ -79,12 +79,12 @@ fn updatable_field_options(field: &Field) -> Option<UpdatableFieldOptions> {
     let mut field_opts = UpdatableFieldOptions::default();
     let mut flatten = false;
     for attr in &field.attrs {
-        let meta = attr.interpret_meta().expect("unparseable attribute");
-        if meta.name() == "updatable" {
+        let meta = attr.parse_meta().expect("unparseable attribute");
+        if meta.path().is_ident("updatable") {
             updatable = true;
             match meta {
                 // We have `#[updatable]`, do nothing.
-                Meta::Word(_) => {}
+                Meta::Path(_) => {}
                 // We have `#[updatable(..)]`, look for nested options.
                 Meta::List(MetaList {
                     nested: options, ..
@@ -93,9 +93,9 @@ fn updatable_field_options(field: &Field) -> Option<UpdatableFieldOptions> {
                         match option {
                             // We have a `flatten` option.
                             NestedMeta::Meta(ref flatten_meta)
-                                if flatten_meta.name() == "flatten" =>
+                                if flatten_meta.path().is_ident("flatten") =>
                             {
-                                if let Meta::Word(_) = flatten_meta {
+                                if let Meta::Path(_) = flatten_meta {
                                     flatten = true;
                                 } else {
                                     panic!(
@@ -110,7 +110,7 @@ fn updatable_field_options(field: &Field) -> Option<UpdatableFieldOptions> {
                             // TODO: Do we want to keep this? It's not being used, but it's
                             // potentially quite useful.
                             NestedMeta::Meta(ref attr_meta)
-                                if attr_meta.name() == "attr" =>
+                                if attr_meta.path().is_ident("attr") =>
                             {
                                 match attr_meta {
                                     Meta::List(MetaList {
