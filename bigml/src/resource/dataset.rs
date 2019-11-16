@@ -61,6 +61,10 @@ pub struct Args {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
+    /// User-defined tags.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
+
     /// Placeholder to allow extensibility without breaking the API.
     #[serde(skip)]
     _placeholder: (),
@@ -72,6 +76,7 @@ impl Args {
         Args {
             source,
             name: None,
+            tags: vec![],
             _placeholder: (),
         }
     }
