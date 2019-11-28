@@ -117,6 +117,14 @@ pub struct Field {
     #[updatable]
     pub optype: Optype,
 
+    /// Date formats to use when parsing this field. See [the BigML docs][docs] for
+    /// details.
+    ///
+    /// [docs]: https://bigml.com/api/sources#sr_datetime_detection
+    #[updatable]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub time_formats: Vec<String>,
+
     // The locale of this field.
     //pub locale: Option<String>,
 
