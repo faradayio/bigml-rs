@@ -122,7 +122,7 @@ pub struct Field {
     ///
     /// [docs]: https://bigml.com/api/sources#sr_datetime_detection
     #[updatable]
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub time_formats: Vec<String>,
 
     // The locale of this field.
