@@ -4,7 +4,7 @@ use bytes::{BufMut, BytesMut};
 use failure::Error;
 use serde::Serialize;
 use std::marker::PhantomData;
-use tokio::codec::Encoder;
+use tokio_util::codec::Encoder;
 
 /// A [`tokio::codec::Encoder`] that outputs a [line-delimited JSON
 /// stream][json]. This can be used to output a `Stream` of values implementing
@@ -31,7 +31,7 @@ impl<T: Serialize> Encoder for LineDelimitedJsonCodec<T> {
     fn encode(&mut self, item: T, buf: &mut BytesMut) -> Result<(), Error> {
         let json = serde_json::to_vec(&item)?;
         buf.reserve(json.len() + 1);
-        buf.put(json);
+        buf.put(&json[..]);
         buf.put_u8(b'\n');
         Ok(())
     }

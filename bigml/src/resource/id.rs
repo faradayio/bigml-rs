@@ -4,7 +4,6 @@ use serde::de::Unexpected;
 use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 use std::marker::PhantomData;
-use std::result;
 use std::str::FromStr;
 use url::Url;
 
@@ -68,7 +67,7 @@ impl<R: Resource> fmt::Display for Id<R> {
 }
 
 impl<'de, R: Resource> Deserialize<'de> for Id<R> {
-    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -91,7 +90,7 @@ impl<'de, R: Resource> Deserialize<'de> for Id<R> {
 }
 
 impl<R: Resource> Serialize for Id<R> {
-    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {

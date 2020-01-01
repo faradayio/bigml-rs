@@ -1,18 +1,19 @@
 //! A client connection to BigML.
 
 use bytes::Bytes;
-use futures::{compat::Future01CompatExt, FutureExt};
-use mpart_async::{FileStream, MultipartRequest};
-use reqwest::{self, r#async as reqwest_async, StatusCode};
+use failure::Fail;
+use futures::{prelude::*, FutureExt};
+use reqwest::{self, multipart, StatusCode};
 use serde::de::DeserializeOwned;
 use serde_json;
 use std::error;
 use std::future::Future;
-use std::path::Path;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
-use tokio::prelude::*;
+use tokio::fs;
+use tokio_util::codec;
 use url::Url;
 
 use crate::errors::*;
@@ -69,12 +70,11 @@ impl Client {
             Args::Resource::create_path(),
             &serde_json::to_string(args)
         );
-        let client = reqwest_async::Client::new();
+        let client = reqwest::Client::new();
         let res = client
             .post(url.clone())
             .json(args)
             .send()
-            .compat()
             .await
             .map_err(|e| Error::could_not_access_url(&url, e))?;
         self.handle_response_and_deserialize(&url, res).await
@@ -96,34 +96,29 @@ impl Client {
     /// stream the data over the network without trying to load it all into
     /// memory at once.
     #[deprecated = "This won't work until BigML fixes Transfer-Encoding: chunked"]
-    pub async fn create_source_from_stream<S, E>(
+    pub async fn create_source_from_stream<S>(
         &self,
         filename: &str,
         stream: S,
     ) -> Result<Source>
     where
-        S: Stream<Item = Bytes, Error = E> + Send + 'static,
-        E: error::Error + Send + Sync + 'static,
+        S: TryStream + Send + Sync + 'static,
+        S::Error: Into<Box<dyn error::Error + Send + Sync>>,
+        Bytes: From<S::Ok>,
     {
         debug!("uploading {} from stream", filename);
 
-        // Open up our file and add it to a multi-part request.
-        let mut mpart = MultipartRequest::default();
-        mpart.add_stream("file", filename, "application/octet-stream", stream);
-        let content_type =
-            format!("multipart/form-data; boundary={}", mpart.get_boundary());
-        let body =
-            Box::new(mpart) as Box<dyn Stream<Item = _, Error = _> + Send + 'static>;
+        let data = multipart::Part::stream(reqwest::Body::wrap_stream(stream))
+            .mime_str("application/octet-stream")?;
+        let form = multipart::Form::new().part("file", data);
 
         // Post our request.
         let url = self.url("/source");
-        let client = reqwest_async::Client::new();
+        let client = reqwest::Client::new();
         let res = client
             .post(url.clone())
-            .header("Content-Type", content_type)
-            .body(reqwest_async::Body::from(body))
+            .multipart(form)
             .send()
-            .compat()
             .await
             .map_err(|e| Error::could_not_access_url(&url, e))?;
         self.handle_response_and_deserialize(&url, res).await
@@ -134,12 +129,17 @@ impl Client {
     /// memory at once.
     #[allow(clippy::needless_lifetimes, deprecated)]
     #[deprecated = "This won't work until BigML fixes Transfer-Encoding: chunked"]
-    pub async fn create_source_from_path<P>(&self, path: P) -> Result<Source>
-    where
-        P: AsRef<Path>,
-    {
-        let path = path.as_ref();
-        let stream = FileStream::new(&path);
+    pub async fn create_source_from_path(&self, path: PathBuf) -> Result<Source> {
+        // Covnert our path to a stream of `Bytes`.
+        let file = fs::File::open(&path)
+            .await
+            .map_err(|err| Error::could_not_read_file(&path, err))?;
+        let err_path = path.clone();
+        let stream = codec::FramedRead::new(file, codec::BytesCodec::new())
+            .map_ok(|bytes| bytes.freeze())
+            .map_err(move |err| Error::could_not_read_file(&err_path, err).compat());
+
+        // Create our source.
         let filename = path.to_string_lossy();
         self.create_source_from_stream(&filename, stream).await
     }
@@ -149,10 +149,10 @@ impl Client {
     /// memory.
     #[allow(clippy::needless_lifetimes, deprecated)]
     #[deprecated = "This won't work until BigML fixes Transfer-Encoding: chunked"]
-    pub async fn create_source_from_path_and_wait<P>(&self, path: P) -> Result<Source>
-    where
-        P: AsRef<Path>,
-    {
+    pub async fn create_source_from_path_and_wait(
+        &self,
+        path: PathBuf,
+    ) -> Result<Source> {
         let source = self.create_source_from_path(path).await?;
         // Only wait 2 hours for a source to be created
         let options = WaitOptions::default().timeout(Duration::from_secs(2 * 60 * 60));
@@ -171,12 +171,11 @@ impl Client {
     ) -> Result<()> {
         let url = self.url(resource.as_str());
         debug!("PUT {}: {:?}", url, update);
-        let client = reqwest_async::Client::new();
+        let client = reqwest::Client::new();
         let res = client
             .request(reqwest::Method::PUT, url.clone())
             .json(update)
             .send()
-            .compat()
             .await
             .map_err(|e| Error::could_not_access_url(&url, e))?;
         // Parse our result as JSON, because it often seems to be missing
@@ -191,11 +190,10 @@ impl Client {
     /// Fetch an existing resource.
     pub async fn fetch<'a, R: Resource>(&'a self, resource: &'a Id<R>) -> Result<R> {
         let url = self.url(resource.as_str());
-        let client = reqwest_async::Client::new();
+        let client = reqwest::Client::new();
         let res = client
             .get(url.clone())
             .send()
-            .compat()
             .await
             .map_err(|e| Error::could_not_access_url(&url, e))?;
         self.handle_response_and_deserialize(&url, res).await
@@ -255,7 +253,7 @@ impl Client {
                     WaitStatus::Waiting
                 }
             }
-                .boxed()
+            .boxed()
         })
         .await
         .map_err(|e| Error::could_not_access_url(&url, e))
@@ -266,7 +264,7 @@ impl Client {
     pub async fn download<'a, R: Resource>(
         &'a self,
         resource: &'a Id<R>,
-    ) -> Result<reqwest_async::Response> {
+    ) -> Result<reqwest::Response> {
         let options = WaitOptions::default().timeout(Duration::from_secs(3 * 60));
         self.download_opt(resource, &options).await
     }
@@ -277,16 +275,16 @@ impl Client {
         &'a self,
         resource: &'a Id<R>,
         options: &'a WaitOptions,
-    ) -> Result<reqwest_async::Response> {
+    ) -> Result<reqwest::Response> {
         let url = self.url(&format!("{}/download", &resource));
         debug!("Downloading {}", url_without_api_key(&url));
-        let client = reqwest_async::Client::new();
+        let client = reqwest::Client::new();
         wait(
             &options,
             || -> Pin<Box<dyn Future<Output = WaitStatus<_, Error>> + Send>> {
                 async {
-                    let mut res = try_with_temporary_failure!(
-                        client.get(url.clone()).send().compat().await
+                    let res = try_with_temporary_failure!(
+                        client.get(url.clone()).send().await
                     );
                     if res.status().is_success() {
                         // Sometimes "/download" returns JSON instead of CSV, which
@@ -294,9 +292,8 @@ impl Client {
                         let headers = res.headers().to_owned();
                         if let Some(ct) = headers.get("Content-Type") {
                             if ct.as_bytes().starts_with(b"application/json") {
-                                let body = try_with_temporary_failure!(
-                                    res.text().compat().await
-                                );
+                                let body =
+                                    try_with_temporary_failure!(res.text().await);
                                 debug!("Got JSON when downloading CSV: {}", body);
                                 return WaitStatus::Waiting;
                             }
@@ -311,7 +308,7 @@ impl Client {
                         unreachable!()
                     }
                 }
-                    .boxed()
+                .boxed()
             },
         )
         .await
@@ -321,11 +318,10 @@ impl Client {
     /// Delete the specified resource.
     pub async fn delete<'a, R: Resource>(&'a self, resource: &'a Id<R>) -> Result<()> {
         let url = self.url(resource.as_str());
-        let client = reqwest_async::Client::new();
+        let client = reqwest::Client::new();
         let res = client
             .request(reqwest::Method::DELETE, url.clone())
             .send()
-            .compat()
             .await
             .map_err(|e| Error::could_not_access_url(&url, e))?;
         if res.status().is_success() {
@@ -341,7 +337,7 @@ impl Client {
     async fn handle_response_and_deserialize<'a, T>(
         &'a self,
         url: &'a Url,
-        mut res: reqwest_async::Response,
+        res: reqwest::Response,
     ) -> Result<T>
     where
         T: DeserializeOwned,
@@ -349,7 +345,6 @@ impl Client {
         if res.status().is_success() {
             let body = res
                 .text()
-                .compat()
                 .await
                 .map_err(|e| Error::could_not_access_url(&url, e))?;
             debug!("Success body: {}", &body);
@@ -364,11 +359,11 @@ impl Client {
     async fn response_to_err<'a, T>(
         &'a self,
         url: &'a Url,
-        mut res: reqwest_async::Response,
+        res: reqwest::Response,
     ) -> Result<T> {
         let url = url.to_owned();
         let status: StatusCode = res.status().to_owned();
-        let body = res.text().compat().await?;
+        let body = res.text().await?;
         debug!("Error status: {} body: {}", status, body);
         match status {
             StatusCode::PAYMENT_REQUIRED => Err(Error::PaymentRequired { url, body }),

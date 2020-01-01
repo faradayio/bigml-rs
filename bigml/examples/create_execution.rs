@@ -1,20 +1,22 @@
 use bigml;
 use env_logger;
 use failure;
+use futures::executor::block_on;
 #[macro_use]
 extern crate log;
 
 use bigml::resource;
-use failure::ResultExt;
-use futures::{FutureExt, TryFutureExt};
-use std::env;
-use std::io::{self, Write};
-use std::process;
-use std::result;
-use std::str::FromStr;
-use tokio::prelude::*;
+use failure::{Error, ResultExt};
+use futures::FutureExt;
+use std::{
+    env,
+    io::{self, Write},
+    process, result,
+    str::FromStr,
+};
 
-type Result<T> = result::Result<T, failure::Error>;
+/// A custom `Result`, for convenience.
+pub type Result<T, E = Error> = result::Result<T, E>;
 
 /// A local helper function which does the real work, and which can return
 /// an error (unlike `main`).
@@ -43,7 +45,7 @@ fn helper(
     }
 
     // Execute the script, wait for it to complete, and print the result.
-    let execution = client.create_and_wait(&args).boxed().compat().wait()?;
+    let execution = block_on(client.create_and_wait(&args).boxed())?;
     println!("{:#?}", execution);
 
     Ok(())

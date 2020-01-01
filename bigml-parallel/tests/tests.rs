@@ -6,7 +6,7 @@ use bigml::{
 };
 use cli_test_dir::*;
 use common_failures::prelude::*;
-use futures::{FutureExt, TryFutureExt};
+use futures::FutureExt;
 use serde_json;
 use std::{env, future::Future, io::Write};
 use tokio::runtime::Runtime;
@@ -26,7 +26,7 @@ where
     T: Send + 'static,
 {
     let mut runtime = Runtime::new().expect("Unable to create a runtime");
-    runtime.block_on(fut.boxed().compat())
+    runtime.block_on(fut.boxed())
 }
 
 #[test]
