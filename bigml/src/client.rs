@@ -130,7 +130,7 @@ impl Client {
     #[allow(clippy::needless_lifetimes, deprecated)]
     #[deprecated = "This won't work until BigML fixes Transfer-Encoding: chunked"]
     pub async fn create_source_from_path(&self, path: PathBuf) -> Result<Source> {
-        // Covnert our path to a stream of `Bytes`.
+        // Convert our path to a stream of `Bytes`.
         let file = fs::File::open(&path)
             .await
             .map_err(|err| Error::could_not_read_file(&path, err))?;
