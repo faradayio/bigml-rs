@@ -14,7 +14,7 @@ use std::result;
 use url::Url;
 
 /// A custom `Result`, for convenience.
-pub type Result<T> = result::Result<T, Error>;
+pub type Result<T, E = Error> = result::Result<T, E>;
 
 /// A BigML-related error.
 #[derive(Debug, Fail)]
@@ -114,6 +114,17 @@ impl Error {
     {
         Error::CouldNotGetOutput {
             name: name.to_owned(),
+            error: error.into(),
+        }
+    }
+
+    pub(crate) fn could_not_read_file<P, E>(path: P, error: E) -> Error
+    where
+        P: Into<PathBuf>,
+        E: Into<failure::Error>,
+    {
+        Error::CouldNotReadFile {
+            path: path.into(),
             error: error.into(),
         }
     }

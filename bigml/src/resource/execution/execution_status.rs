@@ -86,13 +86,12 @@ impl Status for ExecutionStatus {
 /// Functions for (de)serializing WhizzML call stacks.
 pub(crate) mod call_stack_repr {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
-    use std::result;
 
     use super::*;
 
     pub(crate) fn deserialize<'de, D>(
         deserializer: D,
-    ) -> result::Result<Option<Vec<SourceLocation>>, D::Error>
+    ) -> Result<Option<Vec<SourceLocation>>, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -114,7 +113,7 @@ pub(crate) mod call_stack_repr {
     pub(crate) fn serialize<S>(
         stack: &Option<Vec<SourceLocation>>,
         serializer: S,
-    ) -> result::Result<S::Ok, S::Error>
+    ) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {

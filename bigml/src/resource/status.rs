@@ -2,7 +2,6 @@
 
 use serde::de::Unexpected;
 use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
-use std::result;
 
 /// A BigML status code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,7 +46,7 @@ impl StatusCode {
 }
 
 impl<'de> Deserialize<'de> for StatusCode {
-    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {

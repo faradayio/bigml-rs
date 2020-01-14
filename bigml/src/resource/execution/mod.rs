@@ -6,7 +6,6 @@ use serde::ser::SerializeSeq;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json;
 use std::fmt;
-use std::result;
 use url::Url;
 
 use super::id::*;
@@ -101,7 +100,7 @@ pub struct Source {
 }
 
 impl<'de> Deserialize<'de> for Source {
-    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -116,10 +115,7 @@ impl<'de> Deserialize<'de> for Source {
                 write!(f, "a list with a source ID and a description")
             }
 
-            fn visit_seq<V>(
-                self,
-                mut visitor: V,
-            ) -> result::Result<Self::Value, V::Error>
+            fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
             where
                 V: de::SeqAccess<'de>,
             {
@@ -145,7 +141,7 @@ impl<'de> Deserialize<'de> for Source {
 }
 
 impl Serialize for Source {
-    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -193,7 +189,7 @@ impl fmt::Display for SourceId {
 }
 
 impl<'de> Deserialize<'de> for SourceId {
-    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -208,7 +204,7 @@ impl<'de> Deserialize<'de> for SourceId {
                 write!(f, "a script or library ID")
             }
 
-            fn visit_str<E>(self, value: &str) -> result::Result<Self::Value, E>
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
             where
                 E: de::Error,
             {
@@ -233,7 +229,7 @@ impl<'de> Deserialize<'de> for SourceId {
 }
 
 impl Serialize for SourceId {
-    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {

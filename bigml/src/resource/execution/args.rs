@@ -6,7 +6,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json;
 use std::error;
 use std::fmt;
-use std::result;
 
 use super::Execution;
 use crate::errors::*;
@@ -109,7 +108,7 @@ impl Output {
         if let Some(ref value) = self.value {
             // We need to be explicit about the error type we want
             // `from_value` to return here.
-            let result: result::Result<D, serde_json::error::Error> =
+            let result: Result<D, serde_json::error::Error> =
                 serde_json::value::from_value(value.to_owned());
             result.map_err(|e| Error::could_not_get_output(&self.name, e))
         } else {
@@ -122,7 +121,7 @@ impl Output {
 }
 
 impl<'de> Deserialize<'de> for Output {
-    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -137,7 +136,7 @@ impl<'de> Deserialize<'de> for Output {
                 write!(f, "either a string or a [name, value, type] sequence")
             }
 
-            fn visit_str<E>(self, v: &str) -> result::Result<Self::Value, E>
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
             where
                 E: error::Error,
             {
@@ -149,10 +148,7 @@ impl<'de> Deserialize<'de> for Output {
                 })
             }
 
-            fn visit_seq<V>(
-                self,
-                mut visitor: V,
-            ) -> result::Result<Self::Value, V::Error>
+            fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
             where
                 V: de::SeqAccess<'de>,
             {
@@ -230,7 +226,7 @@ fn deserialize_multiple_outputs() {
 }
 
 impl Serialize for Output {
-    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -284,7 +280,7 @@ pub struct LogEntry {
 }
 
 impl<'de> Deserialize<'de> for LogEntry {
-    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
@@ -299,10 +295,7 @@ impl<'de> Deserialize<'de> for LogEntry {
                 write!(f, "a list containing log entry information")
             }
 
-            fn visit_seq<V>(
-                self,
-                mut visitor: V,
-            ) -> result::Result<Self::Value, V::Error>
+            fn visit_seq<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
             where
                 V: de::SeqAccess<'de>,
             {
@@ -340,7 +333,7 @@ impl<'de> Deserialize<'de> for LogEntry {
 }
 
 impl Serialize for LogEntry {
-    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {

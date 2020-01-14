@@ -15,16 +15,17 @@ cli_test_dir = "0.1.5"
 
 [dependencies]
 bigml = { version = "=0.4.4", path = "../bigml" }
-bytes = "0.4.12"
+bytes = "0.5.3"
 common_failures = "0.1.1"
 # This makes the executable bigger, but it makes --help much nicer.
 clap = { version = "2", features = ["wrap_help"] }
 env_logger = "0.7"
 failure = "0.1.5"
-futures-preview = { version = "0.3.0-alpha.17", features = ["compat"] }
+futures = "0.3.1"
 log = "0.4"
 serde = { version = "1" }
 serde_json = "1.0"
 # This is pretty heavyweight, but it's easy to set up and nice for users.
 structopt = "0.3.4"
-tokio = "0.1.22"
+tokio = { version = "0.2.6", features = ["fs", "io-std"] }
+tokio-util = { version = "0.2.0", features = ["codec"] }

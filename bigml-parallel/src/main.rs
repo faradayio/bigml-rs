@@ -7,16 +7,12 @@ use bigml::{
 use common_failures::{quick_main, Result};
 use env_logger;
 use failure::{Error, ResultExt};
-use futures::{compat::Future01CompatExt, Future, FutureExt, TryFutureExt};
+use futures::{self, stream, FutureExt, StreamExt, TryStreamExt};
 use log::debug;
-use std::{env, pin::Pin, sync::Arc};
+use std::{env, sync::Arc};
 use structopt::StructOpt;
-use tokio::{
-    codec::{FramedRead, FramedWrite, LinesCodec},
-    io,
-    prelude::{stream, Stream},
-    runtime::Runtime,
-};
+use tokio::{io, runtime::Runtime};
+use tokio_util::codec::{FramedRead, FramedWrite, LinesCodec};
 
 mod execution_input;
 mod line_delimited_json_codec;
@@ -25,10 +21,10 @@ use execution_input::ExecutionInput;
 use line_delimited_json_codec::LineDelimitedJsonCodec;
 
 /// Our standard stream type, containing values of type `T`.
-type BoxStream<T> = Box<dyn Stream<Item = T, Error = Error> + Send + 'static>;
+type BoxStream<T> = futures::stream::BoxStream<'static, Result<T>>;
 
 /// Our standard future type, yield a value of type `T`.
-type BoxFuture<T> = Pin<Box<dyn Future<Output = Result<T>> + Send + 'static>>;
+type BoxFuture<T> = futures::future::BoxFuture<'static, Result<T>>;
 
 /// Our command-line arguments.
 #[derive(Debug, StructOpt)]
@@ -88,7 +84,7 @@ fn run() -> Result<()> {
     // Create a future for our async code, and pass it to an async runtime.
     let fut = run_async(opt);
     let mut runtime = Runtime::new().expect("Unable to create a runtime");
-    runtime.block_on(fut.boxed().compat())?;
+    runtime.block_on(fut.boxed())?;
     Ok(())
 }
 
@@ -100,11 +96,11 @@ async fn run_async(opt: Opt) -> Result<()> {
     let resources: BoxStream<String> = if !opt.resources.is_empty() {
         // Turn our `--resource` arguments into a stream.
         let resources = opt.resources.clone();
-        Box::new(stream::iter_ok(resources.into_iter()))
+        stream::iter(resources.into_iter().map(Ok)).boxed()
     } else {
         // Parse standard input as a stream of dataset IDs.
         let lines = FramedRead::new(io::stdin(), LinesCodec::new());
-        Box::new(lines.map_err(|e| -> Error { e.into() }))
+        lines.map_err(|e| -> Error { e.into() }).boxed()
     };
 
     // Wrap our command line arguments in a thread-safe reference counter, so
@@ -114,30 +110,30 @@ async fn run_async(opt: Opt) -> Result<()> {
     // Transform our stream of IDs into a stream of _futures_, each of which will
     // return an `Execution` object from BigML.
     let opt2 = opt.clone();
-    let execution_futures: BoxStream<BoxFuture<Execution>> =
-        Box::new(resources.map(move |resource| {
+    let execution_futures: BoxStream<BoxFuture<Execution>> = resources
+        .map_ok(move |resource| {
             resource_id_to_execution(opt2.clone(), resource).boxed()
-        }));
+        })
+        .boxed();
 
     // Now turn the stream of futures into a stream of executions, using
     // `buffer_unordered` to execute up to `opt.max_tasks` in parallel. This is
     // basically the "payoff" for all the async code up above, and it is
     // wonderful.
-    let executions: BoxStream<Execution> = Box::new(
-        execution_futures
-            // Convert back to legacy `tokio::Future` for `buffered_unordered`.
-            .map(|fut| fut.compat())
-            // TODO: This has weird buffering behavior, and appears to wait
-            // until it buffers `opt.max_tasks` items.
-            .buffer_unordered(opt.max_tasks),
-    );
+    //
+    // TODO: In tokio 0.1, this had weird buffering behavior, and
+    // appeared to wait until it buffered `opt.max_tasks` items. I have
+    // not verified this in tokio 0.2.
+    let executions: BoxStream<Execution> = execution_futures
+        .try_buffer_unordered(opt.max_tasks)
+        .boxed();
 
     // Copy our stream of `Execution`s to standard output as line-delimited
     // JSON.
     //
     // TODO: `forward` may also have weird buffering behavior.
     let stdout = FramedWrite::new(io::stdout(), LineDelimitedJsonCodec::new());
-    let (_executions, _stdout) = executions.forward(stdout).compat().await?;
+    executions.forward(stdout).await?;
     Ok(())
 }
 

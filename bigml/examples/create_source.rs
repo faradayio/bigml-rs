@@ -2,16 +2,14 @@
 // `create_source_from_path`.
 #![allow(deprecated)]
 
-use bigml;
+use bigml::{self, resource::Resource};
 use env_logger;
 
-use bigml::resource::Resource;
-use futures::{FutureExt, TryFutureExt};
+use futures::{executor::block_on, FutureExt};
 use std::env;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process;
-use tokio::prelude::*;
 
 fn main() {
     env_logger::init();
@@ -31,17 +29,9 @@ fn main() {
 
     let client = bigml::Client::new(bigml_username, bigml_api_key)
         .expect("can't create bigml::Client");
-    let initial_response = client
-        .create_source_from_path(&path)
-        .boxed()
-        .compat()
-        .wait()
+    let initial_response = block_on(client.create_source_from_path(path).boxed())
         .expect("can't create source");
-    let response = client
-        .wait(initial_response.id())
-        .boxed()
-        .compat()
-        .wait()
+    let response = block_on(client.wait(initial_response.id()).boxed())
         .expect("error waiting for resource");
 
     println!("{:#?}", &response);

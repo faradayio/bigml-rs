@@ -9,7 +9,7 @@
 //!
 //! ```no_run(
 //! use bigml::{Client, resource::{execution, Id, Script}};
-//! use futures::{FutureExt, TryFutureExt};
+//! use futures::{executor::block_on, FutureExt, TryFutureExt};
 //! use std::{path::Path, str::FromStr};
 //! use tokio::prelude::*;
 //!
@@ -23,11 +23,9 @@
 //! // Create a BigML client.
 //! let client = bigml::Client::new(username, api_key)?;
 //!
-//! // Create a source.
-//! let source = client.create_source_from_path_and_wait(path)
-//!   .boxed()
-//!   .compat()
-//!   .wait()?;
+//! // Create a source (actually, you should do this via S3 for now).
+//! let source =
+//!     block_on(client.create_source_from_path_and_wait(path.to_owned()))?;
 //! println!("{:?}", source);
 //!
 //! // Execute the script.
@@ -35,10 +33,7 @@
 //! args.set_script(script_id);
 //! args.add_input("source-id", &source.resource)?;
 //! args.add_output("my-output");
-//! let execution = client.create_and_wait(&args)
-//!   .boxed()
-//!   .compat()
-//!   .wait()?;
+//! let execution = block_on(client.create_and_wait(&args))?;
 //! println!("{:?}", execution);
 //! #
 //! #   Ok(())
