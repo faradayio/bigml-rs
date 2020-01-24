@@ -155,7 +155,7 @@ impl<T, E> From<E> for WaitStatus<T, E> {
 ///
 /// If you return `Ok(WaitStatus::Waiting)` instead, this function will wait
 /// some number of seconds, and then try again.
-#[allow(clippy::needless_lifetimes)]
+#[allow(clippy::needless_lifetimes, clippy::needless_doctest_main)]
 pub async fn wait<T, E, F, R>(options: &WaitOptions, mut f: F) -> result::Result<T, E>
 where
     F: FnMut() -> R,
