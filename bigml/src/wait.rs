@@ -83,7 +83,7 @@ impl Default for WaitOptions {
             timeout: None,
             retry_interval: Duration::from_secs(10),
             backoff_type: BackoffType::Linear,
-            allowed_errors: 2,
+            allowed_errors: 4,
         }
     }
 }
