@@ -255,7 +255,7 @@ impl Client {
                     WaitStatus::Waiting
                 }
             }
-                .boxed()
+            .boxed()
         })
         .await
         .map_err(|e| Error::could_not_access_url(&url, e))
@@ -311,7 +311,7 @@ impl Client {
                         unreachable!()
                     }
                 }
-                    .boxed()
+                .boxed()
             },
         )
         .await
