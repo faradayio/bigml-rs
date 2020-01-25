@@ -267,7 +267,7 @@ impl Client {
         &'a self,
         resource: &'a Id<R>,
     ) -> Result<reqwest_async::Response> {
-        let options = WaitOptions::default().timeout(Duration::from_secs(3 * 60));
+        let options = WaitOptions::default().timeout(Duration::from_secs(16 * 60));
         self.download_opt(resource, &options).await
     }
 

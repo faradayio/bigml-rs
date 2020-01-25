@@ -1,6 +1,6 @@
 [package]
 name = "bigml"
-version = "0.4.5-seamus4"
+version = "0.4.5-seamus5"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 
 description = "Unofficial BigML client bindings"
