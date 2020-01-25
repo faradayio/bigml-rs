@@ -82,7 +82,7 @@ impl Default for WaitOptions {
         Self {
             timeout: None,
             retry_interval: Duration::from_secs(10),
-            backoff_type: BackoffType::Linear,
+            backoff_type: BackoffType::Exponential,
             allowed_errors: 4,
         }
     }
@@ -185,7 +185,7 @@ where
             {
                 errors_seen += 1;
                 error!(
-                    "got error, will retry ({}/{}): {}",
+                    "got error, will retry! ({}/{}): {}",
                     errors_seen, options.allowed_errors, e,
                 );
             }
