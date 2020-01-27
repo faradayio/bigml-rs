@@ -265,7 +265,12 @@ impl Client {
         &'a self,
         resource: &'a Id<R>,
     ) -> Result<reqwest::Response> {
-        let options = WaitOptions::default().timeout(Duration::from_secs(3 * 60));
+        // This timeout needs to be set fairly high, because when we first try
+        // to download a dataset, even one which has been `wait`ed on, we get
+        // back a JSON message informing us that the dataset isn't ready for
+        // download yet. We've definitely seen this process take longer than 3
+        // minutes, so let's try this.
+        let options = WaitOptions::default().timeout(Duration::from_secs(10 * 60));
         self.download_opt(resource, &options).await
     }
 
