@@ -1,7 +1,10 @@
 //! A CLI tool for executing BigML jobs in parallel.
 
 use bigml::{
+    self,
     resource::{execution, Execution, Id, Resource, Script},
+    try_wait,
+    wait::{wait, BackoffType, WaitOptions, WaitStatus},
     Client,
 };
 use common_failures::{quick_main, Result};
@@ -9,7 +12,7 @@ use env_logger;
 use failure::{Error, ResultExt};
 use futures::{self, stream, FutureExt, StreamExt, TryStreamExt};
 use log::debug;
-use std::{env, sync::Arc};
+use std::{env, sync::Arc, time::Duration};
 use structopt::StructOpt;
 use tokio::{io, runtime::Runtime};
 use tokio_util::codec::{FramedRead, FramedWrite, LinesCodec};
@@ -170,11 +173,22 @@ async fn resource_id_to_execution(
     // Add tags.
     args.tags = opt.tags.clone();
 
-    // Execute our script, retrying if needed.
-    //
-    // TODO: Add retry logic? Do we need it?
+    // Execute our script, retrying the creation of the execution if needed.
     let client = new_client()?;
-    let mut execution = client.create(&args).await?;
+    let opt = WaitOptions::default()
+        .retry_interval(Duration::from_secs(60))
+        .backoff_type(BackoffType::Exponential)
+        .allowed_errors(6)
+        .timeout(Duration::from_secs(2 * 60 * 60));
+    let mut execution = wait(&opt, || {
+        async {
+            // We use `try_wait`, because it knows which errors are permanent
+            // and which are temporary.
+            WaitStatus::Finished(try_wait!(client.create(&args).await))
+        }
+    })
+    .await?;
+    // This has its own retry logic, so we don't wrap it above.
     execution = client.wait(&execution.id()).await?;
     debug!("finished {} on {}", execution.id(), resource);
     Ok(execution)

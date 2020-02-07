@@ -13,6 +13,7 @@ const MIN_SLEEP_SECS: u64 = 4;
 
 /// How should we back off if we fail?
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum BackoffType {
     /// Use the same interval for each retry.
     Linear,
@@ -101,6 +102,30 @@ pub enum WaitStatus<T, E> {
     FailedPermanently(E),
 }
 
+impl<T> From<Error> for WaitStatus<T, Error> {
+    /// Convert an [`Error`] to either [`WaitStatus::FailedTemporarily`] or
+    /// [`WaitStatus::FailedPermanently`] depending on [`Error::might_be_temporary`].
+    fn from(error: Error) -> Self {
+        if error.might_be_temporary() {
+            WaitStatus::FailedTemporarily(error)
+        } else {
+            WaitStatus::FailedPermanently(error)
+        }
+    }
+}
+
+/// Try `e`, and if it fails, allow our wait function to be retried for
+/// temporary errors only.
+#[macro_export]
+macro_rules! try_wait {
+    ($e:expr) => {
+        match $e {
+            Ok(v) => v,
+            Err(e) => return $crate::wait::WaitStatus::<_, $crate::Error>::from(e),
+        }
+    };
+}
+
 /// Try `e`, and if it fails, allow our `wait` function to be retried.
 #[macro_export]
 macro_rules! try_with_temporary_failure {
@@ -121,14 +146,6 @@ macro_rules! try_with_permanent_failure {
             Err(e) => return $crate::wait::WaitStatus::FailedPermanently(e.into()),
         }
     };
-}
-
-impl<T, E> From<E> for WaitStatus<T, E> {
-    /// Convert automatically from errors to `WaitStatus::FailedTemporarily` to
-    /// make `?` convenient.
-    fn from(err: E) -> Self {
-        WaitStatus::FailedTemporarily(err)
-    }
 }
 
 /// Call `f` repeatedly, wait for it to return `WaitStatus::Finished`, an error,

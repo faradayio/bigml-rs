@@ -18,6 +18,7 @@ pub type Result<T, E = Error> = result::Result<T, E>;
 
 /// A BigML-related error.
 #[derive(Debug, Fail)]
+#[non_exhaustive]
 pub enum Error {
     /// We could not access the specified URL.
     ///
@@ -27,21 +28,21 @@ pub enum Error {
     #[fail(display = "error accessing '{}': {}", url, error)]
     CouldNotAccessUrl {
         url: Url,
-        /*#[cause]*/ error: failure::Error,
+        /*#[cause]*/ error: Box<Error>,
     },
 
     /// We could not get an output value from a WhizzML script.
     #[fail(display = "could not get WhizzML output '{}': {}", name, error)]
     CouldNotGetOutput {
         name: String,
-        /*#[cause]*/ error: failure::Error,
+        /*#[cause]*/ error: Box<Error>,
     },
 
     /// We could not read a file.
     #[fail(display = "could not read file {:?}: {}", path, error)]
     CouldNotReadFile {
         path: PathBuf,
-        /*#[cause]*/ error: failure::Error,
+        /*#[cause]*/ error: Box<Error>,
     },
 
     /// We could not access an output value of a WhizzML script.
@@ -100,32 +101,43 @@ impl Error {
     /// sanitize the URL query.
     pub(crate) fn could_not_access_url<E>(url: &Url, error: E) -> Error
     where
-        E: Into<failure::Error>,
+        E: Into<Error>,
     {
         Error::CouldNotAccessUrl {
             url: url_without_api_key(&url),
-            error: error.into(),
+            error: Box::new(error.into()),
         }
     }
 
     pub(crate) fn could_not_get_output<E>(name: &str, error: E) -> Error
     where
-        E: Into<failure::Error>,
+        E: Into<Error>,
     {
         Error::CouldNotGetOutput {
             name: name.to_owned(),
-            error: error.into(),
+            error: Box::new(error.into()),
         }
     }
 
     pub(crate) fn could_not_read_file<P, E>(path: P, error: E) -> Error
     where
         P: Into<PathBuf>,
-        E: Into<failure::Error>,
+        E: Into<Error>,
     {
         Error::CouldNotReadFile {
             path: path.into(),
-            error: error.into(),
+            error: Box::new(error.into()),
+        }
+    }
+
+    /// Is this error likely to be temporary?
+    pub fn might_be_temporary(&self) -> bool {
+        match self {
+            Error::CouldNotAccessUrl { error, .. } => error.might_be_temporary(),
+            Error::CouldNotGetOutput { error, .. } => error.might_be_temporary(),
+            Error::CouldNotReadFile { error, .. } => error.might_be_temporary(),
+            Error::PaymentRequired { .. } => true,
+            _ => false,
         }
     }
 }
@@ -146,6 +158,8 @@ impl From<io::Error> for Error {
 
 impl From<reqwest::Error> for Error {
     fn from(error: reqwest::Error) -> Error {
+        // TODO: We might be able to classify more `serde` errors as temporary
+        // now.
         Error::Other {
             error: error.into(),
         }

@@ -26,6 +26,7 @@ pub use self::execution_status::*;
 /// TODO: Still lots of missing fields.
 #[derive(Clone, Debug, Deserialize, Resource, Serialize)]
 #[api_name = "execution"]
+#[non_exhaustive]
 pub struct Execution {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
@@ -40,16 +41,13 @@ pub struct Execution {
 
     /// Further information about this execution.
     pub execution: Data,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 /// Data about a script execution.
 ///
 /// TODO: Lots of missing fields.
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[non_exhaustive]
 pub struct Data {
     /// Outputs from this script.
     #[serde(default)]
@@ -70,10 +68,6 @@ pub struct Data {
     /// Source files used as inputs to this execution.
     #[serde(default)]
     pub sources: Vec<Source>,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 impl Data {
@@ -90,13 +84,12 @@ impl Data {
 
 /// Information about a source code resource.
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub struct Source {
     /// The script or library associated with this source.
     pub id: SourceId,
     /// The description associated with this source.
     pub description: String,
-    /// Placeholder to allow extensibility without breaking the API.
-    _placeholder: (),
 }
 
 impl<'de> Deserialize<'de> for Source {
@@ -128,11 +121,7 @@ impl<'de> Deserialize<'de> for Source {
                     V::Error::custom("no description field in source")
                 })?;
 
-                Ok(Source {
-                    id,
-                    description,
-                    _placeholder: (),
-                })
+                Ok(Source { id, description })
             }
         }
 
@@ -154,6 +143,7 @@ impl Serialize for Source {
 
 /// Either a script or library ID.
 #[derive(Clone, Debug)]
+#[non_exhaustive]
 pub enum SourceId {
     /// A library ID.
     Library(Id<Library>),

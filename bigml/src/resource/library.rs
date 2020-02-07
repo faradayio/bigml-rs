@@ -11,6 +11,7 @@ use super::{Resource, ResourceCommon};
 /// TODO: Still lots of missing fields.
 #[derive(Clone, Debug, Deserialize, Resource, Serialize)]
 #[api_name = "library"]
+#[non_exhaustive]
 pub struct Library {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
@@ -25,14 +26,11 @@ pub struct Library {
 
     /// The source code of this library.
     pub source_code: String,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 /// Arguments used to create a new BigML script.
 #[derive(Debug, Serialize)]
+#[non_exhaustive]
 pub struct Args {
     /// The category code which best describes this script.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -56,10 +54,6 @@ pub struct Args {
     /// User-defined tags.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 impl Args {
@@ -72,7 +66,6 @@ impl Args {
             name: Default::default(),
             source_code: source_code.into(),
             tags: Default::default(),
-            _placeholder: (),
         }
     }
 }

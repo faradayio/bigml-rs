@@ -5,6 +5,7 @@ use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 
 /// A BigML status code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum StatusCode {
     /// BigML is waiting on another resource before processing this one.
     Waiting,
@@ -110,6 +111,7 @@ pub trait Status {
 
 /// Status of a generic resource.
 #[derive(Debug, Deserialize, Clone, Serialize)]
+#[non_exhaustive]
 pub struct GenericStatus {
     /// Status code.
     pub code: StatusCode,
@@ -123,10 +125,6 @@ pub struct GenericStatus {
     /// Number between 0.0 and 1.0 representing the progress of creating
     /// this resource.
     pub progress: Option<f32>,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 impl Status for GenericStatus {
