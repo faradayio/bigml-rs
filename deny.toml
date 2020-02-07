@@ -21,13 +21,12 @@ deny = ["AGPL-3.0"]
 multiple-versions = "warn"
 
 skip = [
-    { name = "autocfg", version = "0.1.7" },
     { name = "miow", version = "0.2.1" },
     { name = "winapi", version = "0.2.8" },
 ]
 
 skip-tree = [
-    # Inlcuded by `reqwest`. But not actually used on non-WASM platforms?
+    # Included by `reqwest`. But not actually used on non-WASM platforms?
     { name = "wasm-bindgen-webidl" },
 ]
 
