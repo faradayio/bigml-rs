@@ -13,6 +13,7 @@ use super::{Resource, ResourceCommon, Source};
 /// TODO: Still lots of missing fields.
 #[derive(Clone, Debug, Deserialize, Resource, Serialize)]
 #[api_name = "dataset"]
+#[non_exhaustive]
 pub struct Dataset {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
@@ -45,14 +46,11 @@ pub struct Dataset {
 
     /// The number of rows in this dataset.
     pub rows: usize,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 /// Arguments used to create a dataset.
 #[derive(Debug, Serialize)]
+#[non_exhaustive]
 pub struct Args {
     /// The ID of the BigML `Source` from which to import data.
     pub source: Id<Source>,
@@ -64,10 +62,6 @@ pub struct Args {
     /// User-defined tags.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 impl Args {
@@ -77,7 +71,6 @@ impl Args {
             source,
             name: None,
             tags: vec![],
-            _placeholder: (),
         }
     }
 }

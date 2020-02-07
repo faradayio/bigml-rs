@@ -14,6 +14,7 @@ use super::{Resource, ResourceCommon};
 #[derive(Clone, Debug, Deserialize, Resource, Serialize)]
 #[serde(bound(deserialize = ""))]
 #[api_name = "evaluation"]
+#[non_exhaustive]
 pub struct Evaluation<R: Result> {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
@@ -28,10 +29,6 @@ pub struct Evaluation<R: Result> {
 
     /// The result of this evaluation.
     pub result: R,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 /// The result of an evaluation.
@@ -45,6 +42,7 @@ pub trait Result:
 
 /// The result of evaluating a classifier.
 #[derive(Debug, Deserialize, Serialize)]
+#[non_exhaustive]
 pub struct ClassificationResult {
     /// The names of our classifications.
     pub class_names: Vec<String>,
@@ -59,16 +57,13 @@ pub struct ClassificationResult {
     /// According to BigML, "Measures the performance of the classifier
     /// that predicts a random class for all the instances in the dataset."
     pub random: DetailedClassificationResult,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 impl Result for ClassificationResult {}
 
 /// The detailed result of an evaluation using specific criteria.
 #[derive(Debug, Deserialize, Serialize)]
+#[non_exhaustive]
 pub struct DetailedClassificationResult {
     /// The portion of instances we classified correctly.
     pub accuracy: f64,
@@ -84,13 +79,11 @@ pub struct DetailedClassificationResult {
     pub confusion_matrix: Vec<Vec<f64>>,
     /// Statistics for each of the individidual classes.
     pub per_class_statistics: Vec<ClassificationPerClassStatistics>,
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 /// The detailed result of an evaluation using specific criteria.
 #[derive(Debug, Deserialize, Serialize)]
+#[non_exhaustive]
 pub struct ClassificationPerClassStatistics {
     /// The portion of instances in this class that were correctly
     /// classified.
@@ -107,9 +100,6 @@ pub struct ClassificationPerClassStatistics {
     /// The number of true positives over the number of actual positives in
     /// the dataset. (TP / (TP + FN))
     pub recall: f64,
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 // TODO: RegressionResult.

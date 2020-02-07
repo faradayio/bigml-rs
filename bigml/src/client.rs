@@ -232,6 +232,9 @@ impl Client {
         wait(&wait_options, || {
             let progress_options = progress_options.clone();
             async move {
+                // TODO: Consider replacing `try_with_temporary_failure!`
+                // and `try_with_permanent_failure!` with `try_wait!` and
+                // appropriate error wrapping.
                 let res = try_with_temporary_failure!(self.fetch(resource).await);
                 if let Some(ref mut callback) =
                     progress_options.write().unwrap().callback
@@ -288,6 +291,9 @@ impl Client {
             &options,
             || -> Pin<Box<dyn Future<Output = WaitStatus<_, Error>> + Send>> {
                 async {
+                    // TODO: Consider replacing `try_with_temporary_failure!`
+                    // and `try_with_permanent_failure!` with `try_wait!` and
+                    // appropriate error wrapping.
                     let res = try_with_temporary_failure!(
                         client.get(url.clone()).send().await
                     );

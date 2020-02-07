@@ -15,6 +15,7 @@ use crate::errors::*;
 /// TODO: Still lots of missing fields.
 #[derive(Clone, Debug, Deserialize, Resource, Serialize)]
 #[api_name = "script"]
+#[non_exhaustive]
 pub struct Script {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
@@ -29,14 +30,11 @@ pub struct Script {
 
     /// The source code of this script.
     pub source_code: String,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 /// Arguments used to create a new BigML script.
 #[derive(Debug, Serialize)]
+#[non_exhaustive]
 pub struct Args {
     /// The category code which best describes this script.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -68,10 +66,6 @@ pub struct Args {
     /// User-defined tags.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 impl Args {
@@ -86,7 +80,6 @@ impl Args {
             outputs: Default::default(),
             source_code: source_code.into(),
             tags: Default::default(),
-            _placeholder: (),
         }
     }
 }
@@ -97,6 +90,7 @@ impl super::Args for Args {
 
 /// A script input declaration.
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[non_exhaustive]
 pub struct Input {
     /// The variable name of this input.
     pub name: String,
@@ -107,9 +101,6 @@ pub struct Input {
     pub default: Option<serde_json::Value>,
     /// A description of this input.
     pub description: Option<String>,
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(default, skip_serializing)]
-    _placeholder: (),
 }
 
 impl Input {
@@ -120,13 +111,13 @@ impl Input {
             type_,
             default: None,
             description: None,
-            _placeholder: (),
         }
     }
 }
 
 /// A script output declaration.
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[non_exhaustive]
 pub struct Output {
     /// The variable name of this output.
     pub name: String,
@@ -135,9 +126,6 @@ pub struct Output {
     pub type_: Type,
     /// A description of this output.
     pub description: Option<String>,
-    /// Placeholder to allow extensibility without breaking API.
-    #[serde(default, skip_serializing)]
-    _placeholder: (),
 }
 
 impl Output {
@@ -147,7 +135,6 @@ impl Output {
             name: name.into(),
             type_,
             description: None,
-            _placeholder: (),
         }
     }
 }
@@ -158,6 +145,7 @@ macro_rules! declare_type_enum {
         /// Input or output type.
         #[derive(Clone, Copy, Debug, Deserialize, Eq, Serialize, PartialEq)]
         #[allow(missing_docs)]
+        #[non_exhaustive]
         pub enum Type {
             $(
                 #[serde(rename = $api_name)]

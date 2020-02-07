@@ -12,6 +12,7 @@ use super::{Resource, ResourceCommon, Updatable};
 /// TODO: Still lots of missing fields.
 #[derive(Clone, Debug, Deserialize, Resource, Serialize, Updatable)]
 #[api_name = "source"]
+#[non_exhaustive]
 pub struct Source {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
@@ -41,16 +42,13 @@ pub struct Source {
     /// The fields in this source, keyed by BigML internal ID.
     #[updatable]
     pub fields: Option<HashMap<String, Field>>,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 /// Arguments used to create a data source.
 ///
 /// TODO: Add more fields so people need to use `update` less.
 #[derive(Debug, Serialize)]
+#[non_exhaustive]
 pub struct Args {
     /// The URL of the data source.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -71,10 +69,6 @@ pub struct Args {
     /// User-defined tags.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 impl Args {
@@ -86,7 +80,6 @@ impl Args {
             disable_datetime: None,
             name: None,
             tags: vec![],
-            _placeholder: (),
         }
     }
 
@@ -98,7 +91,6 @@ impl Args {
             disable_datetime: None,
             name: None,
             tags: vec![],
-            _placeholder: (),
         }
     }
 }
@@ -109,6 +101,7 @@ impl super::Args for Args {
 
 /// Information about a field in a data source.
 #[derive(Clone, Debug, Deserialize, Serialize, Updatable)]
+#[non_exhaustive]
 pub struct Field {
     /// The name of this field.
     pub name: String,
@@ -124,19 +117,16 @@ pub struct Field {
     #[updatable]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub time_formats: Vec<String>,
-
     // The locale of this field.
     //pub locale: Option<String>,
 
     // (This is not well-documented in the BigML API.)
     //pub missing_tokens: Option<Vec<String>>,
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 /// The type of a data field.
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+#[non_exhaustive]
 pub enum Optype {
     /// Treat this as a date value.
     #[serde(rename = "datetime")]

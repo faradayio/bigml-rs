@@ -11,6 +11,7 @@ use super::{Resource, ResourceCommon};
 /// TODO: Still lots of missing fields.
 #[derive(Clone, Debug, Deserialize, Resource, Serialize)]
 #[api_name = "batchcentroid"]
+#[non_exhaustive]
 pub struct BatchCentroid {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
@@ -30,8 +31,4 @@ pub struct BatchCentroid {
     //pub output_dataset_resource: Option<Id<Dataset>>,
     /// Is our output dataset currently available?
     pub output_dataset_status: bool,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }

@@ -35,6 +35,7 @@ pub use self::source::Source;
 /// # use bigml::resource::{GenericStatus, Id, Resource, ResourceCommon, Status, Updatable};
 /// #[derive(Clone, Debug, Deserialize, Resource, Serialize, Updatable)]
 /// #[api_name = "exampleresource"]
+/// #[non_exhaustive]
 /// pub struct ExampleResource {
 ///     /// Common resource information. These fields will be serialized at the
 ///     /// top-level of this structure by `serde`.
@@ -51,10 +52,6 @@ pub use self::source::Source;
 ///     pub status: GenericStatus,
 ///
 ///     // Resource-specific fields here.
-///
-///     /// Placeholder to allow extensibility without breaking the API.
-///     #[serde(skip)]
-///     _placeholder: (),
 /// }
 /// ```
 pub trait Resource:
@@ -138,6 +135,7 @@ pub trait Args: fmt::Debug + Serialize {
 /// all types which implement `Resource` using `#[serde(flatten)]`, giving us a
 /// sort of inheritence.
 #[derive(Clone, Debug, Deserialize, Serialize, Updatable)]
+#[non_exhaustive]
 pub struct ResourceCommon {
     /// Used to classify by industry or category.  0 is "Miscellaneous".
     pub category: i64,
@@ -173,14 +171,10 @@ pub struct ResourceCommon {
 
     /// User-defined tags.
     pub tags: Vec<String>,
-
     // The last time this was updated.
     //
     // TODO: The response is missing the `Z`, which makes chrono sad.
     //pub updated: DateTime<UTC>,
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 // Support modules defining general types.

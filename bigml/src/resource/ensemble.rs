@@ -12,6 +12,7 @@ use super::{Resource, ResourceCommon};
 /// TODO: Still lots of missing fields.
 #[derive(Clone, Debug, Deserialize, Resource, Serialize)]
 #[api_name = "ensemble"]
+#[non_exhaustive]
 pub struct Ensemble {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
@@ -36,32 +37,22 @@ pub struct Ensemble {
     /// TODO: This may need to be wrapped in `Option` to handle the early
     /// stages of resource creation, when not all fields are present.
     pub importance: HashMap<String, f64>,
-
     // The dataset used to create this ensemble.
     //pub dataset: Id<Dataset>,
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 /// Information about this ensemble.
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[non_exhaustive]
 pub struct EnsembleInfo {
     /// Information about this ensemble's fields. Keyed by BigML field ID.
     pub fields: HashMap<String, EnsembleField>,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 /// List of field codes mapped to input fields
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[non_exhaustive]
 pub struct EnsembleField {
     /// The original name of this field (not the BigML field ID).
     pub name: String,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }

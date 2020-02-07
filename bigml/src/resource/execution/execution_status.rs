@@ -7,6 +7,7 @@ use crate::resource::status::*;
 
 /// Execution-specific status information.
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[non_exhaustive]
 pub struct ExecutionStatus {
     /// Status code.
     pub code: StatusCode,
@@ -47,10 +48,6 @@ pub struct ExecutionStatus {
     /// (Undocumented) Where are we in the script's execution? This is
     /// particularly useful when an error occurs.
     pub source_location: Option<SourceLocation>,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 impl ExecutionStatus {
@@ -104,7 +101,6 @@ pub(crate) mod call_stack_repr {
                     origin,
                     columns,
                     lines,
-                    _placeholder: (),
                 })
                 .collect()
         }))
@@ -128,6 +124,7 @@ pub(crate) mod call_stack_repr {
 
 /// A location in an execution's source code.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct SourceLocation {
     /// Start and end column.
     pub columns: (u64, u64),
@@ -138,14 +135,11 @@ pub struct SourceLocation {
     /// File in which the error occurred, probably as a position in the
     /// `sources` array?
     pub origin: usize,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 /// The cause of an error.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct Cause {
     /// The error code of the underlying error.
     pub code: i64,
@@ -157,10 +151,6 @@ pub struct Cause {
 
     /// The HTTP status related to the underlying error.
     pub http_status: Option<u16>,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 impl fmt::Display for Cause {
@@ -175,16 +165,13 @@ impl fmt::Display for Cause {
 
 /// Information on the instruction where an error occurred.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct Instruction {
     /// The name of the instruction.
     pub instruction: String,
 
     /// The source location where the error occurred.
     pub source: SourceLocation,
-
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
 
 #[test]

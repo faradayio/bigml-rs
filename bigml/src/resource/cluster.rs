@@ -12,6 +12,7 @@ use super::{Resource, ResourceCommon};
 /// TODO: Still lots of missing fields.
 #[derive(Clone, Debug, Deserialize, Resource, Serialize)]
 #[api_name = "cluster"]
+#[non_exhaustive]
 pub struct Cluster {
     /// Common resource information. These fields will be serialized at the
     /// top-level of this structure by `serde`.
@@ -28,10 +29,4 @@ pub struct Cluster {
     ///
     /// TODO: Convert to a strongly-typed struct.
     pub clusters: Option<serde_json::Value>,
-
-    // The dataset used to create this cluster.
-    //pub dataset: Id<Dataset>,
-    /// Placeholder to allow extensibility without breaking the API.
-    #[serde(skip)]
-    _placeholder: (),
 }
