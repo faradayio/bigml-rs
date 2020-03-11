@@ -54,11 +54,9 @@ extern crate bigml_derive;
 #[macro_use]
 extern crate failure;
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
 extern crate log;
 
-pub use client::Client;
+pub use client::{Client, DEFAULT_BIGML_DOMAIN};
 pub use errors::*;
 pub use progress::{ProgressCallback, ProgressOptions};
 pub use wait::WaitOptions;

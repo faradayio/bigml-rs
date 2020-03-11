@@ -38,6 +38,20 @@ pub enum Error {
         /*#[cause]*/ error: Box<Error>,
     },
 
+    /// We could not parse the specified URL.
+    ///
+    /// **WARNING:** This takes a domain, not the full URL that we couldn't
+    /// parse, because we want to be careful to exclude credentials from error
+    /// messages, and we can't remove credentials from a URL we can't parse.
+    #[fail(
+        display = "could not parse a URL with the domain '{}': {}",
+        domain, error
+    )]
+    CouldNotParseUrlWithDomain {
+        domain: String,
+        /*#[cause]*/ error: Box<url::ParseError>,
+    },
+
     /// We could not read a file.
     #[fail(display = "could not read file {:?}: {}", path, error)]
     CouldNotReadFile {
@@ -116,6 +130,20 @@ impl Error {
         Error::CouldNotGetOutput {
             name: name.to_owned(),
             error: Box::new(error.into()),
+        }
+    }
+
+    /// Construct an `Error::CouldNotParseUrlWithDomain` value.
+    pub(crate) fn could_not_parse_url_with_domain<S>(
+        domain: S,
+        error: url::ParseError,
+    ) -> Error
+    where
+        S: Into<String>,
+    {
+        Error::CouldNotParseUrlWithDomain {
+            domain: domain.into(),
+            error: Box::new(error),
         }
     }
 

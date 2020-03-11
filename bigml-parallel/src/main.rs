@@ -5,7 +5,7 @@ use bigml::{
     resource::{execution, Execution, Id, Resource, Script},
     try_wait,
     wait::{wait, BackoffType, WaitOptions, WaitStatus},
-    Client,
+    Client, DEFAULT_BIGML_DOMAIN,
 };
 use common_failures::{quick_main, Result};
 use env_logger;
@@ -196,8 +196,10 @@ async fn resource_id_to_execution(
 
 /// Create a BigML client using environment varaibles to authenticate.
 fn new_client() -> Result<Client> {
+    let domain =
+        env::var("BIGML_DOMAIN").unwrap_or_else(|_| DEFAULT_BIGML_DOMAIN.to_owned());
     let username =
         env::var("BIGML_USERNAME").context("must specify BIGML_USERNAME")?;
     let api_key = env::var("BIGML_API_KEY").context("must specify BIGML_API_KEY")?;
-    Ok(Client::new(username, api_key)?)
+    Ok(Client::new_with_domain(&domain, username, api_key)?)
 }

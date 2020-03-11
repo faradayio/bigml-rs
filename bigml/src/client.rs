@@ -21,26 +21,47 @@ use crate::progress::ProgressOptions;
 use crate::resource::{self, Id, Resource, Source, Updatable};
 use crate::wait::{wait, WaitOptions, WaitStatus};
 
-lazy_static! {
-    /// The URL of the BigML API.
-    static ref BIGML_URL: Url = Url::parse("https://bigml.io/")
-        .expect("Cannot parse BigML URL in source code");
-}
+/// The default domain to use for making API requests to BigML.
+pub static DEFAULT_BIGML_DOMAIN: &str = "bigml.io";
 
 /// A client connection to BigML.
 pub struct Client {
+    url: Url,
     username: String,
     api_key: String,
 }
 
 impl Client {
-    /// Create a new `Client`.
+    /// Create a new `Client` that will connect to `DEFAULT_BIGML_DOMAIN`.
     pub fn new<S1, S2>(username: S1, api_key: S2) -> Result<Client>
     where
+        // It's unclear whether it's worthwhile to make these generic. We only
+        // do it for backward-compatibility.
         S1: Into<String>,
         S2: Into<String>,
     {
+        Self::new_with_domain(DEFAULT_BIGML_DOMAIN, username, api_key)
+    }
+
+    /// Create a new `Client`, specifying the BigML domain to connect to. Use
+    /// this if you have a specially hosted BigML instance.
+    pub fn new_with_domain<S1, S2>(
+        domain: &str,
+        username: S1,
+        api_key: S2,
+    ) -> Result<Client>
+    where
+        // It's unclear whether it's worthwhile to make these generic. We only
+        // do it for consistency.
+        S1: Into<String>,
+        S2: Into<String>,
+    {
+        let url_str = format!("https://{}/", domain);
+        let url = url_str
+            .parse()
+            .map_err(|err| Error::could_not_parse_url_with_domain(domain, err))?;
         Ok(Client {
+            url,
             username: username.into(),
             api_key: api_key.into(),
         })
@@ -53,7 +74,7 @@ impl Client {
 
     /// Generate an authenticated URL with the specified path.
     fn url(&self, path: &str) -> Url {
-        let mut url: Url = BIGML_URL.clone();
+        let mut url: Url = self.url.clone();
         url.set_path(path);
         url.set_query(Some(&self.auth()));
         url
