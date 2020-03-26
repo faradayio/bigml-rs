@@ -81,6 +81,19 @@ pub trait Resource:
 /// piece of data contained in `Resource`. This is normally passed to
 /// `Client::update`.
 ///
+/// Instances of the generated `Updatable::Update` type are normally created
+/// using struct initialization expressions including `..` and a default value:
+///
+/// ```
+/// use bigml::resource::source::{FieldUpdate, Optype};
+///
+/// // Change the inferred optype of a field.
+/// let field_update = FieldUpdate {
+///     optype: Some(Optype::Categorical),
+///     ..FieldUpdate::default()
+/// };
+/// ```
+///
 /// ### Implementing `Updatable` (internal only)
 ///
 /// For primitive types like `String` or `bool`, you should add them to the
@@ -193,3 +206,13 @@ pub mod execution;
 pub mod library;
 pub mod script;
 pub mod source;
+
+#[test]
+fn can_compile_update_struct_expressions() {
+    // We need to ensure that this compiles.
+    use source::SourceUpdate;
+    let _ = SourceUpdate {
+        fields: None,
+        ..SourceUpdate::default()
+    };
+}

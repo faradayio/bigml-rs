@@ -19,9 +19,15 @@ pub(crate) fn derive(ast: &DeriveInput) -> TokenStream {
 
         #[doc = #update_comment]
         #[derive(Clone, Debug, Default, PartialEq, Serialize)]
-        #[non_exhaustive]
         #vis struct #update_name {
             #( #update_fields )*
+
+            /// Placeholder to allow for future extension without breaking the
+            /// API. Pleae replace this with `#[non_exhaustive]` if it ever
+            /// becomes possible to use that with `..` initializers in structs.
+            #[serde(skip)]
+            #[doc(hidden)]
+            #vis _placeholder: (),
         }
     }
 }
