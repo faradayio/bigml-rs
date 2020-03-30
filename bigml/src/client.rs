@@ -6,6 +6,7 @@ use futures::{prelude::*, FutureExt};
 use reqwest::{self, multipart, StatusCode};
 use serde::de::DeserializeOwned;
 use serde_json;
+use std::env;
 use std::error;
 use std::future::Future;
 use std::path::PathBuf;
@@ -65,6 +66,18 @@ impl Client {
             username: username.into(),
             api_key: api_key.into(),
         })
+    }
+
+    /// Create a new client, using the environment variables `BIGML_USERNAME`,
+    /// `BIGML_API_KEY` and optionally `BIGML_DOMAIN` to configure it.
+    pub fn new_from_env() -> Result<Client> {
+        let domain = env::var("BIGML_DOMAIN")
+            .unwrap_or_else(|_| DEFAULT_BIGML_DOMAIN.to_owned());
+        let username = env::var("BIGML_USERNAME")
+            .map_err(|_| format_err!("must specify BIGML_USERNAME"))?;
+        let api_key = env::var("BIGML_API_KEY")
+            .map_err(|_| format_err!("must specify BIGML_API_KEY"))?;
+        Self::new_with_domain(&domain, username, api_key)
     }
 
     /// Format our BigML auth credentials.

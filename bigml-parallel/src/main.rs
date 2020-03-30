@@ -5,14 +5,14 @@ use bigml::{
     resource::{execution, Execution, Id, Resource, Script},
     try_wait,
     wait::{wait, BackoffType, WaitOptions, WaitStatus},
-    Client, DEFAULT_BIGML_DOMAIN,
+    Client,
 };
 use common_failures::{quick_main, Result};
 use env_logger;
-use failure::{Error, ResultExt};
+use failure::Error;
 use futures::{self, stream, FutureExt, StreamExt, TryStreamExt};
 use log::debug;
-use std::{env, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 use structopt::StructOpt;
 use tokio::{io, runtime::Runtime};
 use tokio_util::codec::{FramedRead, FramedWrite, LinesCodec};
@@ -174,7 +174,7 @@ async fn resource_id_to_execution(
     args.tags = opt.tags.clone();
 
     // Execute our script, retrying the creation of the execution if needed.
-    let client = new_client()?;
+    let client = Client::new_from_env()?;
     let opt = WaitOptions::default()
         .retry_interval(Duration::from_secs(60))
         .backoff_type(BackoffType::Exponential)
@@ -192,14 +192,4 @@ async fn resource_id_to_execution(
     execution = client.wait(&execution.id()).await?;
     debug!("finished {} on {}", execution.id(), resource);
     Ok(execution)
-}
-
-/// Create a BigML client using environment varaibles to authenticate.
-fn new_client() -> Result<Client> {
-    let domain =
-        env::var("BIGML_DOMAIN").unwrap_or_else(|_| DEFAULT_BIGML_DOMAIN.to_owned());
-    let username =
-        env::var("BIGML_USERNAME").context("must specify BIGML_USERNAME")?;
-    let api_key = env::var("BIGML_API_KEY").context("must specify BIGML_API_KEY")?;
-    Ok(Client::new_with_domain(&domain, username, api_key)?)
 }
