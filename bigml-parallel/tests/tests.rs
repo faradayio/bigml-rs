@@ -7,7 +7,6 @@ use bigml::{
 use cli_test_dir::*;
 use common_failures::prelude::*;
 use futures::FutureExt;
-use serde_json;
 use std::{env, future::Future, io::Write};
 use tokio::runtime::Runtime;
 
@@ -69,7 +68,7 @@ fn parallel_executions() {
         // Build some source objects to test.
         let raw_sources = &["id,color\n1,green\n", "id,color\n2,blue\n"];
         let mut sources = vec![];
-        for (i, &raw_source) in raw_sources.into_iter().enumerate() {
+        for (i, &raw_source) in raw_sources.iter().enumerate() {
             let mut args = source::Args::data(raw_source);
             args.disable_datetime = Some(true);
             args.name = Some(format!("bigml-parallel test {}", i));

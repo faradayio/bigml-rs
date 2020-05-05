@@ -8,7 +8,6 @@ use bigml::{
     Client,
 };
 use common_failures::{quick_main, Result};
-use env_logger;
 use failure::Error;
 use futures::{self, stream, FutureExt, StreamExt, TryStreamExt};
 use log::debug;
