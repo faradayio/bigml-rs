@@ -3,8 +3,6 @@
 #![allow(deprecated)]
 
 use bigml::{self, resource::Resource};
-use env_logger;
-
 use futures::{executor::block_on, FutureExt};
 use std::env;
 use std::io::{self, Write};

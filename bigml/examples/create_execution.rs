@@ -1,6 +1,3 @@
-use bigml;
-use env_logger;
-use failure;
 use futures::executor::block_on;
 #[macro_use]
 extern crate log;

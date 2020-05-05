@@ -1,7 +1,6 @@
 //! A WhizzML script on BigML.
 
 use serde::{Deserialize, Serialize};
-use serde_json;
 use std::{fmt, str::FromStr};
 
 use super::id::*;

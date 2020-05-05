@@ -4,7 +4,6 @@ use serde::de;
 use serde::de::DeserializeOwned;
 use serde::ser::SerializeSeq;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use serde_json;
 use std::fmt;
 use url::Url;
 

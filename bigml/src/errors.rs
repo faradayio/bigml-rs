@@ -4,9 +4,6 @@
 // defines.
 #![allow(missing_docs, unused_doc_comments)]
 
-use failure;
-use reqwest;
-use serde_json;
 use std::collections::BTreeMap;
 use std::io;
 use std::path::PathBuf;

@@ -5,7 +5,6 @@ use failure::Fail;
 use futures::{prelude::*, FutureExt};
 use reqwest::{self, multipart, StatusCode};
 use serde::de::DeserializeOwned;
-use serde_json;
 use std::env;
 use std::error;
 use std::future::Future;
