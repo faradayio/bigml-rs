@@ -161,6 +161,8 @@ impl Error {
             Error::CouldNotAccessUrl { error, .. } => error.might_be_temporary(),
             Error::CouldNotGetOutput { error, .. } => error.might_be_temporary(),
             Error::CouldNotReadFile { error, .. } => error.might_be_temporary(),
+            // This error occurs when all your BigML "slots" are used and
+            // they're suggesting you upgrade. Backing off may free up slots.
             Error::PaymentRequired { .. } => true,
             _ => false,
         }
