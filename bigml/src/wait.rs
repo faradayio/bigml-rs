@@ -17,7 +17,7 @@ const MIN_SLEEP_SECS: u64 = 4;
 pub enum BackoffType {
     /// Use the same interval for each retry.
     Linear,
-    /// Double the internal after each failure.
+    /// Double the interval after each failure.
     Exponential,
 }
 

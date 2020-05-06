@@ -233,6 +233,9 @@ impl Client {
     }
 
     /// Poll an existing resource, returning it once it's ready.
+    ///
+    /// If an underlying BigML error occurs, it will be returned as
+    /// `Error::WaitFailed`, and not as a wrapped error.
     pub async fn wait<'a, R: Resource>(&'a self, resource: &'a Id<R>) -> Result<R> {
         let options = WaitOptions::default();
         let mut progress_options = ProgressOptions::default();
@@ -242,6 +245,9 @@ impl Client {
 
     /// Poll an existing resource, returning it once it's ready, and honoring
     /// wait and progress options.
+    ///
+    /// If an underlying BigML error occurs, it will be returned as
+    /// `Error::WaitFailed`, and not as a wrapped error.
     pub async fn wait_opt<'a, 'b, R: Resource>(
         &self,
         resource: &'a Id<R>,
@@ -282,8 +288,15 @@ impl Client {
                         id: resource.to_string(),
                         message: message.to_owned(),
                     };
-                    // I think we always want to fail for good here? We may need to
-                    // tweak this.
+                    // In general, we want to fail for good here, because even
+                    // if this error could be fixed, it's going to have to be
+                    // fixed at a higher level than this call to `wait_opt`.
+                    // Most likely, the underlying BigML resource will need to
+                    // be recreated from scratch and waited on again.
+                    //
+                    // DO NOT USE `Error::might_be_temporary` here, because we
+                    // know that `Error::WaitFailed` represents an error that
+                    // won't get fixed by waiting more.
                     WaitStatus::FailedPermanently(err)
                 } else {
                     WaitStatus::Waiting

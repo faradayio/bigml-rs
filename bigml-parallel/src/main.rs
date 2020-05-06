@@ -3,14 +3,15 @@
 use bigml::{
     self,
     resource::{execution, Execution, Id, Resource, Script},
-    try_wait,
+    try_wait, try_with_permanent_failure,
     wait::{wait, BackoffType, WaitOptions, WaitStatus},
     Client,
 };
 use common_failures::{quick_main, Result};
 use failure::Error;
 use futures::{self, stream, FutureExt, StreamExt, TryStreamExt};
-use log::debug;
+use log::{debug, error};
+use regex::Regex;
 use std::{sync::Arc, time::Duration};
 use structopt::StructOpt;
 use tokio::{io, runtime::Runtime};
@@ -72,6 +73,14 @@ struct Opt {
     /// Apply a tag to the BigML resources we create.
     #[structopt(long = "tag")]
     tags: Vec<String>,
+
+    /// A regular expression specifying which WhizzML script errors should be retried.
+    #[structopt(long = "retry-on")]
+    retry_on: Option<Regex>,
+
+    /// How many times should we retry a failed execution matching --retry-on?
+    #[structopt(long = "retry-count", default_value = "0")]
+    retry_count: u16,
 }
 
 // Generate a `main` function that prints out pretty errors.
@@ -172,23 +181,73 @@ async fn resource_id_to_execution(
     // Add tags.
     args.tags = opt.tags.clone();
 
-    // Execute our script, retrying the creation of the execution if needed.
-    let client = Client::new_from_env()?;
-    let opt = WaitOptions::default()
-        .retry_interval(Duration::from_secs(60))
+    // Execute our script, with three types of retries.
+    //
+    // 1. Retry the entire execution if it fails with an error that looks
+    //    transient. This is often caused by BigML overload, as far as we can
+    //    tell.
+    //     a. Retry the creation if that fails with a transient error. This is often
+    //        caused by running out of slots.
+    //     b. Internally retry the `wait` if it fails with a transient network error.
+    let exec_wait_opt = WaitOptions::default()
+        .retry_interval(Duration::from_secs(2 * 60))
         .backoff_type(BackoffType::Exponential)
-        .allowed_errors(6)
-        .timeout(Duration::from_secs(2 * 60 * 60));
-    let mut execution = wait(&opt, || {
-        async {
-            // We use `try_wait`, because it knows which errors are permanent
-            // and which are temporary.
-            WaitStatus::Finished(try_wait!(client.create(&args).await))
-        }
+        .allowed_errors(opt.retry_count);
+    let execution = wait(&exec_wait_opt, || {
+        create_and_wait_execution(&args, opt.retry_on.as_ref())
     })
     .await?;
-    // This has its own retry logic, so we don't wrap it above.
-    execution = client.wait(&execution.id()).await?;
-    debug!("finished {} on {}", execution.id(), resource);
     Ok(execution)
+}
+
+/// Create a BigML execution and wait for it to finish.
+///
+/// Returns a `WaitStatus`, allowing our caller to retry us as necessary.
+async fn create_and_wait_execution(
+    args: &execution::Args,
+    retry_on: Option<&Regex>,
+) -> WaitStatus<Execution, bigml::Error> {
+    // If we can't create a client, just give up immediately.
+    let client = try_with_permanent_failure!(Client::new_from_env());
+
+    // Attempt to create a new execution. This has custom retry logic with
+    // unusually long timeouts because temporary failures here are generally
+    // caused by hitting API limits, and if we wait 30 minutes, somebody else's
+    // batch job may finish. But if those retries fail, we want to fail
+    // permanently.
+    let create_wait_opt = WaitOptions::default()
+        .retry_interval(Duration::from_secs(60))
+        .backoff_type(BackoffType::Exponential)
+        .allowed_errors(6);
+    let execution = try_with_permanent_failure!(
+        wait(&create_wait_opt, || {
+            async {
+                // We use `try_wait`, because it knows which errors are
+                // permanent and which are temporary.
+                WaitStatus::Finished(try_wait!(client.create(args).await))
+            }
+        })
+        .await
+    );
+
+    // `client.wait` has its own internal retry logic, but it only triggers for
+    // things like failed HTTP calls to BigML. We also want to retry any script
+    // errors that match `retry_on`.
+    match (client.wait(&execution.id()).await, retry_on) {
+        // We succeeded.
+        (Ok(execution), _) => WaitStatus::Finished(execution),
+
+        // We failed with a `WaitError`, we have a `retry_on` pattern, and that
+        // pattern matches our error message from BigML.
+        (Err(bigml::Error::WaitFailed { id, message }), Some(retry_on))
+            if retry_on.is_match(&message) =>
+        {
+            let err = bigml::Error::WaitFailed { id, message };
+            error!("{} failed with temporary error: {}", execution.id(), err);
+            WaitStatus::FailedTemporarily(err)
+        }
+
+        // We have a different kind of error.
+        (Err(err), _) => WaitStatus::FailedPermanently(err),
+    }
 }
