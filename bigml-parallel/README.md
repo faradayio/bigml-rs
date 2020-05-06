@@ -16,24 +16,31 @@ FLAGS:
 
 OPTIONS:
     -i, --input <inputs>...
-            Extra inputs to our WhizzML script, specified as "name=value".
-            These will be parsed as JSON if possible, or treated as strings
-            otherwise.
-    -J, --max-tasks <max_tasks>
-            How many BigML tasks should we use at a time? [default: 2]
-
+            Extra inputs to our WhizzML script, specified as
+            "name=value". These will be parsed as JSON if possible,
+            or treated as strings otherwise
+    -J, --max-tasks <max-tasks>
+            How many BigML tasks should we use at a time? [default:
+            2]
     -n, --name <name>
-            The name to use for our execution objects.
-
+            The name to use for our execution objects
     -o, --output <outputs>...
-            Expected outputs to our WhizzML script, specified as "name".
-
-    -R, --resource-input-name <resource_input_name>
-            The input name used to pass the dataset. [default: resource]
-
+            Expected outputs to our WhizzML script, specified as
+            "name"
+    -R, --resource-input-name <resource-input-name>
+            The input name used to pass the dataset [default:
+            resource]
     -r, --resource <resources>...
-            The resource IDs to process. (Alternatively, pipe resource IDs on
-            standard input, one per line.)
+            The resource IDs to process. (Alternatively, pipe
+            resource IDs on standard input, one per line.)
+        --retry-count <retry-count>
+            How many times should we retry a failed execution
+            matching --retry-on? [default: 0]
+        --retry-on <retry-on>
+            A regular expression specifying which WhizzML script
+            errors should be retried
     -s, --script <script>
-            The WhizzML script ID to run.
+            The WhizzML script ID to run
+        --tag <tags>...
+            Apply a tag to the BigML resources we create
 ```

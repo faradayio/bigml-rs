@@ -1,6 +1,6 @@
 [package]
 name = "bigml-parallel"
-version = "0.6.3"
+version = "0.6.4"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 edition = "2018"
 
@@ -14,7 +14,7 @@ documentation = "https://github.com/faradayio/bigml-rs/tree/master/bigml-paralle
 cli_test_dir = "0.1.5"
 
 [dependencies]
-bigml = { version = "=0.6.3", path = "../bigml" }
+bigml = { version = "=0.6.4", path = "../bigml" }
 bytes = "0.5.3"
 common_failures = "0.1.1"
 # This makes the executable bigger, but it makes --help much nicer.

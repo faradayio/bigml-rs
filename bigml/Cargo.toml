@@ -1,6 +1,6 @@
 [package]
 name = "bigml"
-version = "0.6.3"
+version = "0.6.4"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 
 description = "Unofficial BigML client bindings"
