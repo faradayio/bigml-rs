@@ -234,8 +234,8 @@ impl Client {
 
     /// Poll an existing resource, returning it once it's ready.
     ///
-    /// If an underlying BigML error occurs, it will be returned as
-    /// `Error::WaitFailed`, and not as a wrapped error.
+    /// If an underlying BigML error occurs, it can be accessed using
+    /// [`Error::original_bigml_error`].
     pub async fn wait<'a, R: Resource>(&'a self, resource: &'a Id<R>) -> Result<R> {
         let options = WaitOptions::default();
         let mut progress_options = ProgressOptions::default();
@@ -246,8 +246,8 @@ impl Client {
     /// Poll an existing resource, returning it once it's ready, and honoring
     /// wait and progress options.
     ///
-    /// If an underlying BigML error occurs, it will be returned as
-    /// `Error::WaitFailed`, and not as a wrapped error.
+    /// If an underlying BigML error occurs, it can be accessed using
+    /// [`Error::original_bigml_error`].
     pub async fn wait_opt<'a, 'b, R: Resource>(
         &self,
         resource: &'a Id<R>,

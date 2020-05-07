@@ -167,6 +167,29 @@ impl Error {
             _ => false,
         }
     }
+
+    /// Return the original `bigml::Error` that caused this error, without any
+    /// wrapper errors.
+    pub fn original_bigml_error(&self) -> &Error {
+        match self {
+            Error::CouldNotAccessUrl { error, .. } => error.original_bigml_error(),
+            Error::CouldNotGetOutput { error, .. } => error.original_bigml_error(),
+            Error::CouldNotReadFile { error, .. } => error.original_bigml_error(),
+
+            Error::CouldNotParseUrlWithDomain { .. }
+            | Error::Other { .. }
+            | Error::OutputNotAvailable
+            | Error::PaymentRequired { .. }
+            | Error::Timeout
+            | Error::UnexpectedHttpStatus { .. }
+            | Error::WaitFailed { .. }
+            | Error::WrongResourceType { .. } => self,
+
+            Error::__Nonexclusive => {
+                panic!("should never create Error::__Nonexclusive")
+            }
+        }
+    }
 }
 
 impl From<failure::Error> for Error {
