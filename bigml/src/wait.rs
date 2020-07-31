@@ -81,8 +81,8 @@ impl Default for WaitOptions {
         Self {
             timeout: None,
             retry_interval: Duration::from_secs(10),
-            backoff_type: BackoffType::Linear,
-            allowed_errors: 2,
+            backoff_type: BackoffType::Exponential,
+            allowed_errors: 6,
         }
     }
 }
