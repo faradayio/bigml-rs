@@ -424,6 +424,7 @@ impl Client {
         debug!("Error status: {} body: {}", status, body);
         match status {
             StatusCode::PAYMENT_REQUIRED => Err(Error::PaymentRequired { url, body }),
+            StatusCode::GATEWAY_TIMEOUT => Err(Error::GatewayTimeout { url, body }),
             _ => Err(Error::UnexpectedHttpStatus { url, status, body }),
         }
     }

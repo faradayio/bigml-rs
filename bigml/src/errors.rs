@@ -4,6 +4,7 @@
 // defines.
 #![allow(missing_docs, unused_doc_comments)]
 
+use reqwest::StatusCode;
 use std::collections::BTreeMap;
 use std::io;
 use std::path::PathBuf;
@@ -73,7 +74,7 @@ pub enum Error {
     #[fail(display = "{} for {} ({})", status, url, body)]
     UnexpectedHttpStatus {
         url: Url,
-        status: reqwest::StatusCode,
+        status: StatusCode,
         body: String,
     },
 
@@ -164,6 +165,13 @@ impl Error {
             // This error occurs when all your BigML "slots" are used and
             // they're suggesting you upgrade. Backing off may free up slots.
             Error::PaymentRequired { .. } => true,
+            // Some HTTP status codes also tend to correspond to temporary errors.
+            Error::UnexpectedHttpStatus { status, .. } => match *status {
+                StatusCode::INTERNAL_SERVER_ERROR // I'm not so sure about this one.
+                | StatusCode::SERVICE_UNAVAILABLE
+                | StatusCode::GATEWAY_TIMEOUT => true,
+                _ => false,
+            },
             _ => false,
         }
     }
