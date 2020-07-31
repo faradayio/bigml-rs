@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.6.6 - 2020-07-31
+
+### Changed
+
+- `Client::wait` now uses exponential backoff for up to 10 total minutes, because we're seeing a lot more temporary infrastructure errors from BigML.
+- 500, 503 and 504 HTTP errors are now temporary.
+
 ## 0.6.5 - 2020-05-07
 
 ### Added
