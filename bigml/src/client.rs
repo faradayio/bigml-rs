@@ -19,7 +19,7 @@ use url::Url;
 use crate::errors::*;
 use crate::progress::ProgressOptions;
 use crate::resource::{self, Id, Resource, Source, Updatable};
-use crate::wait::{wait, WaitOptions, WaitStatus};
+use crate::wait::{wait, BackoffType, WaitOptions, WaitStatus};
 
 /// The default domain to use for making API requests to BigML.
 pub static DEFAULT_BIGML_DOMAIN: &str = "bigml.io";
@@ -237,7 +237,10 @@ impl Client {
     /// If an underlying BigML error occurs, it can be accessed using
     /// [`Error::original_bigml_error`].
     pub async fn wait<'a, R: Resource>(&'a self, resource: &'a Id<R>) -> Result<R> {
-        let options = WaitOptions::default();
+        let options = WaitOptions::default()
+            .backoff_type(BackoffType::Exponential)
+            .retry_interval(Duration::from_secs(10))
+            .allowed_errors(6);
         let mut progress_options = ProgressOptions::default();
         self.wait_opt(resource, &options, &mut progress_options)
             .await
@@ -424,7 +427,6 @@ impl Client {
         debug!("Error status: {} body: {}", status, body);
         match status {
             StatusCode::PAYMENT_REQUIRED => Err(Error::PaymentRequired { url, body }),
-            StatusCode::GATEWAY_TIMEOUT => Err(Error::GatewayTimeout { url, body }),
             _ => Err(Error::UnexpectedHttpStatus { url, status, body }),
         }
     }
