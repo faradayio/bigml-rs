@@ -1,10 +1,12 @@
 //! Utilities for waiting, timeouts and error retries.
 
-use std::cmp::max;
-use std::fmt::Display;
-use std::future::Future;
-use std::time::{Duration, SystemTime};
-use tokio::time::delay_for;
+use std::{
+    cmp::max,
+    fmt::Display,
+    future::Future,
+    time::{Duration, SystemTime},
+};
+use tokio::time::sleep;
 
 use crate::errors::*;
 
@@ -153,7 +155,6 @@ macro_rules! try_with_permanent_failure {
 ///
 /// ```
 /// # use futures::{FutureExt, TryFutureExt};
-/// # use tokio::prelude::*;
 /// # #[tokio::main]
 /// # async fn main() -> Result<(), failure::Error> {
 /// use bigml::wait::{wait, WaitOptions, WaitStatus};
@@ -228,7 +229,7 @@ where
 
         // Sleep until our next call.
         let duration = max(Duration::from_secs(MIN_SLEEP_SECS), retry_interval);
-        delay_for(duration).await;
+        sleep(duration).await;
 
         // Update retry interval.
         match options.backoff_type {

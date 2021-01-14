@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.0 - 2021-01-14
+
+### Changed
+
+- Update to `bytes` 1.0, `reqwest` 0.11, `tokio` 1.0.1 and `tokio-util` 0.6.1. Several of these libraries define types that are visible in our public API, so this is technically a semver change. But other than the version updates, no APIs have changed.
+
 ## 0.6.6 - 2020-07-31
 
 ### Changed

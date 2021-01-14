@@ -1,6 +1,6 @@
 [package]
 name = "bigml-parallel"
-version = "0.6.6"
+version = "0.7.0"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 edition = "2018"
 
@@ -14,12 +14,12 @@ documentation = "https://github.com/faradayio/bigml-rs/tree/master/bigml-paralle
 cli_test_dir = "0.1.5"
 
 [dependencies]
-bigml = { version = "=0.6.6", path = "../bigml" }
-bytes = "0.5.3"
+bigml = { version = "=0.7.0", path = "../bigml" }
+bytes = "1.0.1"
 common_failures = "0.1.1"
 # This makes the executable bigger, but it makes --help much nicer.
 clap = { version = "2", features = ["wrap_help"] }
-env_logger = "0.7"
+env_logger = "0.8"
 failure = "0.1.5"
 futures = "0.3.1"
 log = "0.4"
@@ -28,5 +28,5 @@ serde = { version = "1" }
 serde_json = "1.0"
 # This is pretty heavyweight, but it's easy to set up and nice for users.
 structopt = "0.3.4"
-tokio = { version = "0.2.6", features = ["fs", "io-std"] }
-tokio-util = { version = "0.2.0", features = ["codec"] }
+tokio = { version = "1.0.1", features = ["fs", "io-std", "rt-multi-thread"] }
+tokio-util = { version = "0.6.1", features = ["codec"] }

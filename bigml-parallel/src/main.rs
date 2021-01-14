@@ -94,7 +94,7 @@ fn run() -> Result<()> {
 
     // Create a future for our async code, and pass it to an async runtime.
     let fut = run_async(opt);
-    let mut runtime = Runtime::new().expect("Unable to create a runtime");
+    let runtime = Runtime::new().expect("Unable to create a runtime");
     runtime.block_on(fut.boxed())?;
     Ok(())
 }

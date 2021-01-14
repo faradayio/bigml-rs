@@ -11,7 +11,6 @@
 //! use bigml::{Client, resource::{execution, Id, Script}};
 //! use futures::{executor::block_on, FutureExt, TryFutureExt};
 //! use std::{path::Path, str::FromStr};
-//! use tokio::prelude::*;
 //!
 //! # fn main() -> bigml::Result<()> {
 //! #

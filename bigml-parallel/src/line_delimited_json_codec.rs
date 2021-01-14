@@ -24,8 +24,7 @@ impl<T: Serialize> LineDelimitedJsonCodec<T> {
     }
 }
 
-impl<T: Serialize> Encoder for LineDelimitedJsonCodec<T> {
-    type Item = T;
+impl<T: Serialize> Encoder<T> for LineDelimitedJsonCodec<T> {
     type Error = Error;
 
     fn encode(&mut self, item: T, buf: &mut BytesMut) -> Result<(), Error> {

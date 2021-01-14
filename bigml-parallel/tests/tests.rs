@@ -24,7 +24,7 @@ where
     F: Future<Output = Result<T>> + Send + 'static,
     T: Send + 'static,
 {
-    let mut runtime = Runtime::new().expect("Unable to create a runtime");
+    let runtime = Runtime::new().expect("Unable to create a runtime");
     runtime.block_on(fut.boxed())
 }
 
