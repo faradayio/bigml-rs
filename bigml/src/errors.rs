@@ -80,6 +80,7 @@ pub enum Error {
 
     /// We tried to create a BigML resource, but we failed. Display a dashboard
     /// URL to make it easy to look up the actual error.
+    /// FIXME we need to use BIGML_DOMAIN here
     #[fail(display = "https://bigml.com/dashboard/{} failed ({})", id, message)]
     WaitFailed {
         /// The ID of the resource that we were waiting on.

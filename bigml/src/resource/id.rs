@@ -2,12 +2,14 @@
 
 use serde::de::Unexpected;
 use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
+use std::env;
 use std::fmt;
 use std::marker::PhantomData;
 use std::str::FromStr;
 use url::Url;
 
 use super::Resource;
+use crate::client::DEFAULT_BIGML_DOMAIN;
 use crate::errors::*;
 
 /// A strongly-typed "resource ID" used to identify many different kinds of
@@ -30,7 +32,9 @@ impl<R: Resource> Id<R> {
 
     /// Get a URL pointing at the human-readable version of this resource.
     pub fn dashboard_url(&self) -> Url {
-        Url::parse(&format!("https://bigml.com/dashboard/{}", self))
+        let domain = env::var("BIGML_DOMAIN")
+            .unwrap_or_else(|_| DEFAULT_BIGML_DOMAIN.to_owned());
+        Url::parse(&format!("https://{}/dashboard/{}", domain, self))
             // This should never fail to parse.
             .expect("dashboard URL unexpectedly failed to parse")
     }
