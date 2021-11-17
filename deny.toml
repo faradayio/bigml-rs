@@ -20,6 +20,12 @@ deny = ["AGPL-3.0"]
 # Warn about multiple versions of the same crate, unless we've indicated otherwise below.
 multiple-versions = "warn"
 
+deny = [
+    # OpenSSL has caused endless deployment and build problems, and we want
+    # nothing to do with it, in any version.
+    { name = "openssl-sys" },
+]
+
 skip = [
     { name = "miow", version = "0.2.1" },
     { name = "winapi", version = "0.2.8" },
