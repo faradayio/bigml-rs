@@ -233,13 +233,13 @@ async fn create_and_wait_execution(
     // `client.wait` has its own internal retry logic, but it only triggers for
     // things like failed HTTP calls to BigML. We also want to retry any script
     // errors that match `retry_on`.
-    match client.wait(&execution.id()).await {
+    match client.wait(execution.id()).await {
         Ok(execution) => WaitStatus::Finished(execution),
         Err(err) => match (err.original_bigml_error(), retry_on) {
             // We failed with a `WaitError`, we have a `retry_on` pattern, and that
             // pattern matches our error message from BigML.
             (bigml::Error::WaitFailed { message, .. }, Some(retry_on))
-                if retry_on.is_match(&message) =>
+                if retry_on.is_match(message) =>
             {
                 error!("{} failed with temporary error: {}", execution.id(), err);
                 WaitStatus::FailedTemporarily(err)

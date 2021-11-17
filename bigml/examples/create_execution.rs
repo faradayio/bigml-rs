@@ -99,7 +99,7 @@ fn main() {
         for e in err.iter_chain() {
             eprint!(": {}", e);
         }
-        eprintln!("");
+        eprintln!();
         eprintln!("{:?}", err.backtrace());
         process::exit(1);
     }

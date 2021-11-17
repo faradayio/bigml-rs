@@ -29,10 +29,7 @@ impl StatusCode {
     /// Is BigML still working on ingesting and processing this resource?
     pub fn is_working(self) -> bool {
         use self::StatusCode::*;
-        match self {
-            Waiting | Queued | Started | InProgress | Summarized => true,
-            _ => false,
-        }
+        matches!(self, Waiting | Queued | Started | InProgress | Summarized)
     }
 
     /// Has BigML successfully finished processing this resource?

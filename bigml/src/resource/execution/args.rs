@@ -153,14 +153,14 @@ impl<'de> Deserialize<'de> for Output {
                 let value = visitor
                     .next_element()?
                     .ok_or_else(|| V::Error::custom("no value field in output"))?;
-                let type_ = visitor
+                let type_: String = visitor
                     .next_element()?
                     .ok_or_else(|| V::Error::custom("no type field in output"))?;
 
                 Ok(Output {
                     name,
                     value: Some(value),
-                    type_: if type_ == "" { None } else { Some(type_) },
+                    type_: if type_.is_empty() { None } else { Some(type_) },
                 })
             }
         }
@@ -172,7 +172,7 @@ impl<'de> Deserialize<'de> for Output {
 #[test]
 fn deserialize_output_with_only_a_name() {
     let json = r#""name""#;
-    let output: Output = serde_json::from_str(&json).unwrap();
+    let output: Output = serde_json::from_str(json).unwrap();
     assert_eq!(output.name, "name");
     assert!(output.value.is_none());
     assert!(output.get::<bool>().is_err());
@@ -182,7 +182,7 @@ fn deserialize_output_with_only_a_name() {
 #[test]
 fn deserialize_output_with_name_and_value_but_no_type() {
     let json = r#"["name", null, ""]"#;
-    let output: Output = serde_json::from_str(&json).unwrap();
+    let output: Output = serde_json::from_str(json).unwrap();
     assert_eq!(output.name, "name");
     assert_eq!(output.get::<Option<bool>>().unwrap(), None);
     assert!(output.type_.is_none());
@@ -194,7 +194,7 @@ fn deserialize_output_with_everything() {
 
     let json =
         r#"["evaluation", "evaluation/50650d563c19202679000000", "evaluation"]"#;
-    let output: Output = serde_json::from_str(&json).unwrap();
+    let output: Output = serde_json::from_str(json).unwrap();
 
     assert_eq!(output.name, "evaluation");
     let value: Id<Evaluation<ClassificationResult>> = output.get().unwrap();
@@ -213,7 +213,7 @@ fn deserialize_multiple_outputs() {
       ["fields", ["label", "id"], "list"]
     ]
     "#;
-    let outputs: Vec<Output> = serde_json::from_str(&json).unwrap();
+    let outputs: Vec<Output> = serde_json::from_str(json).unwrap();
     assert_eq!(outputs.len(), 3);
 }
 

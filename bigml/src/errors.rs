@@ -101,11 +101,6 @@ pub enum Error {
     /// Another kind of error occurred.
     #[fail(display = "{}", error)]
     Other { /*#[cause]*/ error: failure::Error, },
-
-    /// Add a hidden member for future API extensibility.
-    #[doc(none)]
-    #[fail(display = "This error should never have occurred")]
-    __Nonexclusive,
 }
 
 impl Error {
@@ -116,7 +111,7 @@ impl Error {
         E: Into<Error>,
     {
         Error::CouldNotAccessUrl {
-            url: url_without_api_key(&url),
+            url: url_without_api_key(url),
             error: Box::new(error.into()),
         }
     }
@@ -166,12 +161,12 @@ impl Error {
             // they're suggesting you upgrade. Backing off may free up slots.
             Error::PaymentRequired { .. } => true,
             // Some HTTP status codes also tend to correspond to temporary errors.
-            Error::UnexpectedHttpStatus { status, .. } => match *status {
+            Error::UnexpectedHttpStatus { status, .. } => matches!(
+                *status,
                 StatusCode::INTERNAL_SERVER_ERROR // I'm not so sure about this one.
                 | StatusCode::SERVICE_UNAVAILABLE
-                | StatusCode::GATEWAY_TIMEOUT => true,
-                _ => false,
-            },
+                | StatusCode::GATEWAY_TIMEOUT
+            ),
             _ => false,
         }
     }
@@ -192,10 +187,6 @@ impl Error {
             | Error::UnexpectedHttpStatus { .. }
             | Error::WaitFailed { .. }
             | Error::WrongResourceType { .. } => self,
-
-            Error::__Nonexclusive => {
-                panic!("should never create Error::__Nonexclusive")
-            }
         }
     }
 }

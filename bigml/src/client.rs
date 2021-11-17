@@ -271,7 +271,7 @@ impl Client {
         // line.
         let progress_options = Arc::new(RwLock::new(progress_options));
 
-        wait(&wait_options, || {
+        wait(wait_options, || {
             let progress_options = progress_options.clone();
             async move {
                 // TODO: Consider replacing `try_with_temporary_failure!`
@@ -337,7 +337,7 @@ impl Client {
         debug!("Downloading {}", url_without_api_key(&url));
         let client = reqwest::Client::new();
         wait(
-            &options,
+            options,
             || -> Pin<Box<dyn Future<Output = WaitStatus<_, Error>> + Send>> {
                 async {
                     // TODO: Consider replacing `try_with_temporary_failure!`
@@ -406,10 +406,10 @@ impl Client {
             let body = res
                 .text()
                 .await
-                .map_err(|e| Error::could_not_access_url(&url, e))?;
+                .map_err(|e| Error::could_not_access_url(url, e))?;
             debug!("Success body: {}", &body);
             let properties = serde_json::from_str(&body)
-                .map_err(|e| Error::could_not_access_url(&url, e))?;
+                .map_err(|e| Error::could_not_access_url(url, e))?;
             Ok(properties)
         } else {
             self.response_to_err(url, res).await
