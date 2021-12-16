@@ -65,9 +65,6 @@ fn fields_for_update_type(ast: &DeriveInput) -> Vec<TokenStream> {
 /// Options specified by an `#[updatable(...)]` attribute.
 #[derive(Debug, Default)]
 struct UpdatableFieldOptions {
-    /// Do we want `serde` to flatten this attr into the containing struct for
-    /// us? This involves some tweaking.
-    flatten: bool,
     /// Attrs to pass through to the generated field.
     attrs: Vec<TokenStream>,
 }
