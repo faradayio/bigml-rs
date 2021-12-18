@@ -159,11 +159,11 @@ macro_rules! try_with_permanent_failure {
 /// ```
 /// # use futures::{FutureExt, TryFutureExt};
 /// # #[tokio::main]
-/// # async fn main() -> Result<(), failure::Error> {
+/// # async fn main() -> Result<(), anyhow::Error> {
 /// use bigml::wait::{wait, WaitOptions, WaitStatus};
-/// use failure::Error;
+/// use anyhow::Error;
 ///
-/// let value = wait::<_, failure::Error, _, _>(&WaitOptions::default(), || {
+/// let value = wait::<_, anyhow::Error, _, _>(&WaitOptions::default(), || {
 ///     async { WaitStatus::Finished("my value") }
 /// }).await?;
 ///
