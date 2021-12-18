@@ -13,6 +13,8 @@ use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use tokio::fs;
 use tokio_util::codec;
+use tracing::debug;
+use tracing::instrument;
 use url::Url;
 
 use crate::errors::*;
@@ -44,6 +46,7 @@ impl Client {
 
     /// Create a new `Client`, specifying the BigML domain to connect to. Use
     /// this if you have a specially hosted BigML instance.
+    #[instrument(level = "trace", skip(username, api_key))]
     pub fn new_with_domain<S1, S2>(
         domain: &str,
         username: S1,
@@ -92,6 +95,7 @@ impl Client {
     }
 
     /// Create a new resource.
+    #[instrument(level = "trace", skip(self, args))]
     pub async fn create<'a, Args>(&'a self, args: &'a Args) -> Result<Args::Resource>
     where
         Args: resource::Args,
@@ -113,6 +117,7 @@ impl Client {
     }
 
     /// Create a new resource, and wait until it is ready.
+    #[instrument(level = "trace", skip(self, args))]
     pub async fn create_and_wait<'a, Args>(
         &'a self,
         args: &'a Args,
@@ -196,6 +201,7 @@ impl Client {
     /// Update the specified `resource` using `update`. We do not return the
     /// updated resource because of peculiarities with BigML's API, but you
     /// can always use `Client::fetch` if you need the updated version.
+    #[instrument(level = "trace", skip(self))]
     pub async fn update<'a, R: Resource + Updatable>(
         &'a self,
         resource: &'a Id<R>,
@@ -220,6 +226,7 @@ impl Client {
     }
 
     /// Fetch an existing resource.
+    #[instrument(level = "trace", skip(self))]
     pub async fn fetch<'a, R: Resource>(&'a self, resource: &'a Id<R>) -> Result<R> {
         let url = self.url(resource.as_str());
         let client = reqwest::Client::new();
@@ -235,6 +242,7 @@ impl Client {
     ///
     /// If an underlying BigML error occurs, it can be accessed using
     /// [`Error::original_bigml_error`].
+    #[instrument(level = "trace", skip(self))]
     pub async fn wait<'a, R: Resource>(&'a self, resource: &'a Id<R>) -> Result<R> {
         let options = WaitOptions::default()
             .backoff_type(BackoffType::Exponential)
@@ -250,6 +258,7 @@ impl Client {
     ///
     /// If an underlying BigML error occurs, it can be accessed using
     /// [`Error::original_bigml_error`].
+    #[instrument(level = "trace", skip(self, wait_options, progress_options))]
     pub async fn wait_opt<'a, 'b, R: Resource>(
         &self,
         resource: &'a Id<R>,
@@ -327,6 +336,7 @@ impl Client {
 
     /// Download a resource as a CSV file.  This only makes sense for
     /// certain kinds of resources.
+    #[instrument(level = "trace", skip(self))]
     pub async fn download_opt<'a, R: Resource>(
         &'a self,
         resource: &'a Id<R>,
@@ -375,6 +385,7 @@ impl Client {
     }
 
     /// Delete the specified resource.
+    #[instrument(level = "trace", skip(self))]
     pub async fn delete<'a, R: Resource>(&'a self, resource: &'a Id<R>) -> Result<()> {
         let url = self.url(resource.as_str());
         let client = reqwest::Client::new();
@@ -393,6 +404,7 @@ impl Client {
 
     /// Handle a response from the server, deserializing it as the
     /// appropriate type.
+    #[instrument(level = "trace", skip(self, url, res))]
     async fn handle_response_and_deserialize<'a, T>(
         &'a self,
         url: &'a Url,

@@ -8,9 +8,21 @@ use std::env;
 use std::io::{self, Write};
 use std::path::Path;
 use std::process;
+use tracing_subscriber::{
+    fmt::{format::FmtSpan, Subscriber},
+    prelude::*,
+    EnvFilter,
+};
 
 fn main() {
-    env_logger::init();
+    // Configure tracing.
+    let filter = EnvFilter::from_default_env();
+    Subscriber::builder()
+        .with_writer(std::io::stderr)
+        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
+        .with_env_filter(filter)
+        .finish()
+        .init();
 
     let bigml_username = env::var("BIGML_USERNAME")
         .expect("pass BIGML_USERNAME as an environment variable");

@@ -9,6 +9,12 @@ use cli_test_dir::*;
 use futures::FutureExt;
 use std::{env, future::Future, io::Write};
 use tokio::runtime::Runtime;
+use tracing::{debug_span, Instrument};
+use tracing_subscriber::{
+    fmt::{format::FmtSpan, Subscriber},
+    prelude::*,
+    EnvFilter,
+};
 
 /// Create a BigML client using environment varaibles to authenticate.
 fn new_client() -> Result<Client> {
@@ -57,35 +63,46 @@ static WHIZZML_SCRIPT: &str = r#"
 #[test]
 #[ignore]
 fn parallel_executions() {
-    let _ = env_logger::try_init();
+    // Configure tracing.
+    let filter = EnvFilter::from_default_env();
+    let _ = Subscriber::builder()
+        .with_writer(std::io::stderr)
+        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
+        .with_env_filter(filter)
+        .finish()
+        .try_init();
+    let _span = debug_span!("parallel_executions").entered();
 
     let testdir = TestDir::new("bigml-parallel", "parallel_executions");
 
     // Set up our test infrastructure on BigML.
-    let (sources, script) = run_async(async {
-        let client = new_client()?;
+    let (sources, script) = run_async(
+        async {
+            let client = new_client()?;
 
-        // Build some source objects to test.
-        let raw_sources = &["id,color\n1,green\n", "id,color\n2,blue\n"];
-        let mut sources = vec![];
-        for (i, &raw_source) in raw_sources.iter().enumerate() {
-            let mut args = source::Args::data(raw_source);
-            args.disable_datetime = Some(true);
-            args.name = Some(format!("bigml-parallel test {}", i));
-            let source = client.create_and_wait(&args).await?;
-            sources.push(source.id().to_owned());
+            // Build some source objects to test.
+            let raw_sources = &["id,color\n1,green\n", "id,color\n2,blue\n"];
+            let mut sources = vec![];
+            for (i, &raw_source) in raw_sources.iter().enumerate() {
+                let mut args = source::Args::data(raw_source);
+                args.disable_datetime = Some(true);
+                args.name = Some(format!("bigml-parallel test {}", i));
+                let source = client.create_and_wait(&args).await?;
+                sources.push(source.id().to_owned());
+            }
+
+            // Upload our WhizzML script object.
+            let mut args = script::Args::new(WHIZZML_SCRIPT);
+            args.inputs
+                .push(script::Input::new("source", script::Type::ResourceId));
+            args.inputs
+                .push(script::Input::new("n", script::Type::Integer));
+            let script = client.create_and_wait(&args).await?;
+
+            Ok((sources, script.id().to_owned()))
         }
-
-        // Upload our WhizzML script object.
-        let mut args = script::Args::new(WHIZZML_SCRIPT);
-        args.inputs
-            .push(script::Input::new("source", script::Type::ResourceId));
-        args.inputs
-            .push(script::Input::new("n", script::Type::Integer));
-        let script = client.create_and_wait(&args).await?;
-
-        Ok((sources, script.id().to_owned()))
-    })
+        .instrument(debug_span!("setup")),
+    )
     .unwrap();
 
     // Construct standard input with

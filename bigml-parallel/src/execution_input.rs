@@ -1,9 +1,9 @@
 //! Input arguments for BigML execution resources.
 
 use anyhow::{format_err, Error, Result};
-use log::warn;
 use serde_json::Value;
 use std::str::FromStr;
+use tracing::warn;
 
 /// An input argument for a BigML execution resource.
 #[derive(Debug)]

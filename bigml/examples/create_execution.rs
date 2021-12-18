@@ -1,15 +1,18 @@
-use futures::executor::block_on;
-#[macro_use]
-extern crate log;
-
 use anyhow::{Context, Error};
 use bigml::resource;
+use futures::executor::block_on;
 use futures::FutureExt;
 use std::{
     env,
     io::{self, Write},
     process, result,
     str::FromStr,
+};
+use tracing::debug;
+use tracing_subscriber::{
+    fmt::{format::FmtSpan, Subscriber},
+    prelude::*,
+    EnvFilter,
 };
 
 /// A custom `Result`, for convenience.
@@ -59,7 +62,14 @@ fn usage() -> ! {
 }
 
 fn main() {
-    env_logger::init();
+    // Configure tracing.
+    let filter = EnvFilter::from_default_env();
+    Subscriber::builder()
+        .with_writer(std::io::stderr)
+        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
+        .with_env_filter(filter)
+        .finish()
+        .init();
 
     // Parse our command line options.
     let mut script_id = None;

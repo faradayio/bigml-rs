@@ -7,6 +7,8 @@ use std::{
     time::{Duration, SystemTime},
 };
 use tokio::time::sleep;
+use tracing::{error, instrument, trace, trace_span};
+use tracing_futures::Instrument;
 
 use crate::errors::*;
 
@@ -34,6 +36,7 @@ pub enum BackoffType {
 ///     .timeout(Duration::from_secs(120))
 ///     .allowed_errors(5);
 /// ```
+#[derive(Debug)]
 pub struct WaitOptions {
     /// Time between each retry.
     timeout: Option<Duration>,
@@ -172,6 +175,7 @@ macro_rules! try_with_permanent_failure {
 /// If you return `Ok(WaitStatus::Waiting)` instead, this function will wait
 /// some number of seconds, and then try again.
 #[allow(clippy::needless_lifetimes)]
+#[instrument(level = "trace", skip(f))]
 pub async fn wait<T, E, F, R>(options: &WaitOptions, mut f: F) -> Result<T, E>
 where
     F: FnMut() -> R,
@@ -189,7 +193,8 @@ where
     let mut errors_seen = 0;
     loop {
         // Call the function we're waiting on.
-        match f().await {
+        let fut = f().instrument(trace_span!("wait_attempt", errors_seen));
+        match fut.await {
             WaitStatus::Finished(value) => {
                 trace!("wait finished successfully");
                 return Ok(value);

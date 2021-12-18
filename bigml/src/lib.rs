@@ -50,9 +50,6 @@
 #[macro_use]
 extern crate bigml_derive;
 
-#[macro_use]
-extern crate log;
-
 pub use client::{Client, DEFAULT_BIGML_DOMAIN};
 pub use errors::*;
 pub use progress::{ProgressCallback, ProgressOptions};
