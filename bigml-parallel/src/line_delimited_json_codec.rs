@@ -1,7 +1,7 @@
 //! A [`tokio::codec::Encoder`] that outputs a line-delimited JSON stream.
 
+use anyhow::Error;
 use bytes::{BufMut, BytesMut};
-use failure::Error;
 use serde::Serialize;
 use std::marker::PhantomData;
 use tokio_util::codec::Encoder;

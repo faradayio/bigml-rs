@@ -2,8 +2,8 @@ use futures::executor::block_on;
 #[macro_use]
 extern crate log;
 
+use anyhow::{Context, Error};
 use bigml::resource;
-use failure::{Error, ResultExt};
 use futures::FutureExt;
 use std::{
     env,
@@ -96,7 +96,7 @@ fn main() {
     // Dispatch to our helper function and report any errors it returns.
     if let Err(err) = helper(&script_id, &inputs, &outputs) {
         eprint!("ERROR");
-        for e in err.iter_chain() {
+        for e in err.chain() {
             eprint!(": {}", e);
         }
         eprintln!();

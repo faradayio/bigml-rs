@@ -167,7 +167,7 @@ macro_rules! declare_type_enum {
                 match s {
                     $( $api_name => Ok(Type::$name), )*
                     _ => {
-                        Err(format_err!("Unknown BigML type: {:?}", s).into())
+                        Err(Error::UnknownBigMlType { type_name: s.to_owned() })
                     }
                 }
             }

@@ -6,16 +6,18 @@
 
 use reqwest::StatusCode;
 use std::collections::BTreeMap;
+use std::error::Error as StdError;
 use std::io;
 use std::path::PathBuf;
 use std::result;
+use thiserror::Error;
 use url::Url;
 
 /// A custom `Result`, for convenience.
 pub type Result<T, E = Error> = result::Result<T, E>;
 
 /// A BigML-related error.
-#[derive(Debug, Fail)]
+#[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum Error {
     /// We could not access the specified URL.
@@ -23,64 +25,71 @@ pub enum Error {
     /// **WARNING:** Do not construct this directly, but use
     /// `Error::could_not_access_url` to handle various URL sanitization and
     /// security issues.
-    #[fail(display = "error accessing '{}': {}", url, error)]
-    CouldNotAccessUrl {
-        url: Url,
-        /*#[cause]*/ error: Box<Error>,
-    },
+    #[non_exhaustive]
+    #[error("error accessing '{url}': {source}")]
+    CouldNotAccessUrl { url: Url, source: Box<Error> },
 
     /// We could not get an output value from a WhizzML script.
-    #[fail(display = "could not get WhizzML output '{}': {}", name, error)]
-    CouldNotGetOutput {
-        name: String,
-        /*#[cause]*/ error: Box<Error>,
-    },
+    #[non_exhaustive]
+    #[error("could not get WhizzML output '{name}': {source}")]
+    CouldNotGetOutput { name: String, source: Box<Error> },
 
     /// We could not parse the specified URL.
     ///
     /// **WARNING:** This takes a domain, not the full URL that we couldn't
     /// parse, because we want to be careful to exclude credentials from error
     /// messages, and we can't remove credentials from a URL we can't parse.
-    #[fail(
-        display = "could not parse a URL with the domain '{}': {}",
-        domain, error
-    )]
+    #[non_exhaustive]
+    #[error("could not parse a URL with the domain '{domain}': {source}")]
     CouldNotParseUrlWithDomain {
         domain: String,
-        /*#[cause]*/ error: Box<url::ParseError>,
+        source: Box<url::ParseError>,
     },
 
     /// We could not read a file.
-    #[fail(display = "could not read file {:?}: {}", path, error)]
-    CouldNotReadFile {
-        path: PathBuf,
-        /*#[cause]*/ error: Box<Error>,
-    },
+    #[non_exhaustive]
+    #[error("could not read file {path:?}: {source}")]
+    CouldNotReadFile { path: PathBuf, source: Box<Error> },
+
+    /// The user must specify the environment variable `var`.
+    #[non_exhaustive]
+    #[error("must specify {var}")]
+    MissingEnvVar { var: String },
 
     /// We could not access an output value of a WhizzML script.
-    #[fail(display = "WhizzML output is not (yet?) available")]
-    OutputNotAvailable,
+    #[non_exhaustive]
+    #[error("WhizzML output is not (yet?) available")]
+    OutputNotAvailable {},
 
     /// BigML says that payment is required for this request, perhaps because
     /// we have hit plan limits.
-    #[fail(display = "BigML payment required for {} ({})", url, body)]
+    #[non_exhaustive]
+    #[error("BigML payment required for {url} ({body})")]
     PaymentRequired { url: Url, body: String },
 
     /// A request timed out.
-    #[fail(display = "The operation timed out")]
-    Timeout,
+    #[non_exhaustive]
+    #[error("The operation timed out")]
+    Timeout {},
 
     /// We received an unexpected HTTP status code.
-    #[fail(display = "{} for {} ({})", status, url, body)]
+    #[non_exhaustive]
+    #[error("{status} for {url} ({body})")]
     UnexpectedHttpStatus {
         url: Url,
         status: StatusCode,
         body: String,
     },
 
+    /// We encountered an unknown BigML value type.
+    #[non_exhaustive]
+    #[error("unknown BigML type {type_name:?}")]
+    UnknownBigMlType { type_name: String },
+
     /// We tried to create a BigML resource, but we failed. Display a dashboard
     /// URL to make it easy to look up the actual error.
-    #[fail(display = "https://bigml.com/dashboard/{} failed ({})", id, message)]
+    #[non_exhaustive]
+    #[error("https://bigml.com/dashboard/{id} failed ({message})")]
     WaitFailed {
         /// The ID of the resource that we were waiting on.
         id: String,
@@ -89,18 +98,24 @@ pub enum Error {
     },
 
     /// We found a type mismatch deserializing a BigML resource ID.
-    #[fail(
-        display = "Expected BigML resource ID starting with '{}', found '{}'",
-        expected, found
-    )]
+    #[non_exhaustive]
+    #[error("Expected BigML resource ID starting with '{expected}', found '{found}'")]
     WrongResourceType {
         expected: &'static str,
         found: String,
     },
 
     /// Another kind of error occurred.
-    #[fail(display = "{}", error)]
-    Other { /*#[cause]*/ error: failure::Error, },
+    #[non_exhaustive]
+    #[error("{source}")]
+    Other {
+        /// The original error.
+        ///
+        /// We add `Send + Sync` to make it easy to use in the presence of threads, and
+        /// `'static` to make sure it depends on no borrowed data.
+        #[from]
+        source: Box<dyn StdError + Send + Sync + 'static>,
+    },
 }
 
 impl Error {
@@ -112,7 +127,7 @@ impl Error {
     {
         Error::CouldNotAccessUrl {
             url: url_without_api_key(url),
-            error: Box::new(error.into()),
+            source: Box::new(error.into()),
         }
     }
 
@@ -122,7 +137,7 @@ impl Error {
     {
         Error::CouldNotGetOutput {
             name: name.to_owned(),
-            error: Box::new(error.into()),
+            source: Box::new(error.into()),
         }
     }
 
@@ -136,7 +151,7 @@ impl Error {
     {
         Error::CouldNotParseUrlWithDomain {
             domain: domain.into(),
-            error: Box::new(error),
+            source: Box::new(error),
         }
     }
 
@@ -147,16 +162,16 @@ impl Error {
     {
         Error::CouldNotReadFile {
             path: path.into(),
-            error: Box::new(error.into()),
+            source: Box::new(error.into()),
         }
     }
 
     /// Is this error likely to be temporary?
     pub fn might_be_temporary(&self) -> bool {
         match self {
-            Error::CouldNotAccessUrl { error, .. } => error.might_be_temporary(),
-            Error::CouldNotGetOutput { error, .. } => error.might_be_temporary(),
-            Error::CouldNotReadFile { error, .. } => error.might_be_temporary(),
+            Error::CouldNotAccessUrl { source, .. } => source.might_be_temporary(),
+            Error::CouldNotGetOutput { source, .. } => source.might_be_temporary(),
+            Error::CouldNotReadFile { source, .. } => source.might_be_temporary(),
             // This error occurs when all your BigML "slots" are used and
             // they're suggesting you upgrade. Backing off may free up slots.
             Error::PaymentRequired { .. } => true,
@@ -171,36 +186,37 @@ impl Error {
         }
     }
 
+    /// Construct a `MissingEnvVar` value.
+    pub(crate) fn missing_env_var<S: Into<String>>(var: S) -> Self {
+        Error::MissingEnvVar { var: var.into() }
+    }
+
     /// Return the original `bigml::Error` that caused this error, without any
     /// wrapper errors.
     pub fn original_bigml_error(&self) -> &Error {
         match self {
-            Error::CouldNotAccessUrl { error, .. } => error.original_bigml_error(),
-            Error::CouldNotGetOutput { error, .. } => error.original_bigml_error(),
-            Error::CouldNotReadFile { error, .. } => error.original_bigml_error(),
+            Error::CouldNotAccessUrl { source, .. } => source.original_bigml_error(),
+            Error::CouldNotGetOutput { source, .. } => source.original_bigml_error(),
+            Error::CouldNotReadFile { source, .. } => source.original_bigml_error(),
 
             Error::CouldNotParseUrlWithDomain { .. }
+            | Error::MissingEnvVar { .. }
             | Error::Other { .. }
-            | Error::OutputNotAvailable
+            | Error::OutputNotAvailable { .. }
             | Error::PaymentRequired { .. }
-            | Error::Timeout
+            | Error::Timeout { .. }
             | Error::UnexpectedHttpStatus { .. }
+            | Error::UnknownBigMlType { .. }
             | Error::WaitFailed { .. }
             | Error::WrongResourceType { .. } => self,
         }
     }
 }
 
-impl From<failure::Error> for Error {
-    fn from(error: failure::Error) -> Error {
-        Error::Other { error }
-    }
-}
-
 impl From<io::Error> for Error {
     fn from(error: io::Error) -> Error {
         Error::Other {
-            error: error.into(),
+            source: error.into(),
         }
     }
 }
@@ -210,7 +226,7 @@ impl From<reqwest::Error> for Error {
         // TODO: We might be able to classify more `serde` errors as temporary
         // now.
         Error::Other {
-            error: error.into(),
+            source: error.into(),
         }
     }
 }
@@ -218,7 +234,7 @@ impl From<reqwest::Error> for Error {
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Error {
         Error::Other {
-            error: error.into(),
+            source: error.into(),
         }
     }
 }

@@ -1,7 +1,6 @@
 //! A client connection to BigML.
 
 use bytes::Bytes;
-use failure::Fail;
 use futures::{prelude::*, FutureExt};
 use reqwest::{self, multipart, StatusCode};
 use serde::de::DeserializeOwned;
@@ -73,9 +72,9 @@ impl Client {
         let domain = env::var("BIGML_DOMAIN")
             .unwrap_or_else(|_| DEFAULT_BIGML_DOMAIN.to_owned());
         let username = env::var("BIGML_USERNAME")
-            .map_err(|_| format_err!("must specify BIGML_USERNAME"))?;
+            .map_err(|_| Error::missing_env_var("BIGML_USERNAME"))?;
         let api_key = env::var("BIGML_API_KEY")
-            .map_err(|_| format_err!("must specify BIGML_API_KEY"))?;
+            .map_err(|_| Error::missing_env_var("BIGML_API_KEY"))?;
         Self::new_with_domain(&domain, username, api_key)
     }
 
@@ -170,7 +169,7 @@ impl Client {
         let err_path = path.clone();
         let stream = codec::FramedRead::new(file, codec::BytesCodec::new())
             .map_ok(|bytes| bytes.freeze())
-            .map_err(move |err| Error::could_not_read_file(&err_path, err).compat());
+            .map_err(move |err| Error::could_not_read_file(&err_path, err));
 
         // Create our source.
         let filename = path.to_string_lossy();
@@ -435,8 +434,10 @@ impl Client {
 #[test]
 fn client_url_is_sanitizable() {
     let client = Client::new("example", "secret").unwrap();
-    let err: Error =
-        Error::could_not_access_url(&client.url("/test"), format_err!("Details"));
+    let err_msg = Error::Other {
+        source: "Details".into(),
+    };
+    let err = Error::could_not_access_url(&client.url("/test"), err_msg);
     let err_str = format!("{}", err);
     println!("err_str = {:?}", err_str);
     assert!(!err_str.contains("secret"));

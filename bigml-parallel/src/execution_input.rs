@@ -1,7 +1,6 @@
 //! Input arguments for BigML execution resources.
 
-use common_failures::Result;
-use failure::{format_err, Error};
+use anyhow::{format_err, Error, Result};
 use log::warn;
 use serde_json::Value;
 use std::str::FromStr;

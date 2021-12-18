@@ -108,7 +108,7 @@ impl Output {
         } else {
             Err(Error::could_not_get_output(
                 &self.name,
-                Error::OutputNotAvailable,
+                Error::OutputNotAvailable {},
             ))
         }
     }

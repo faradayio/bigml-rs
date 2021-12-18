@@ -223,7 +223,7 @@ where
                     next_attempt,
                     deadline
                 );
-                return Err(Error::Timeout.into());
+                return Err(Error::Timeout {}.into());
             }
         }
 

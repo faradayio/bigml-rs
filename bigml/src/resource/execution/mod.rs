@@ -77,7 +77,10 @@ impl Data {
                 return output.get();
             }
         }
-        Err(Error::could_not_get_output(name, format_err!("not found")))
+        Err(Error::could_not_get_output(
+            name,
+            Error::OutputNotAvailable {},
+        ))
     }
 }
 

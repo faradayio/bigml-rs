@@ -14,13 +14,12 @@ documentation = "https://github.com/faradayio/bigml-rs/tree/master/bigml-paralle
 cli_test_dir = "0.1.5"
 
 [dependencies]
+anyhow = { version = "1.0.51", features = ["backtrace"] }
 bigml = { version = "=0.8.1", path = "../bigml" }
 bytes = "1.0.1"
-common_failures = "0.1.1"
 # This makes the executable bigger, but it makes --help much nicer.
 clap = { version = "2", features = ["wrap_help"] }
 env_logger = "0.9.0"
-failure = "0.1.5"
 futures = "0.3.1"
 log = "0.4"
 regex = "1.3.7"

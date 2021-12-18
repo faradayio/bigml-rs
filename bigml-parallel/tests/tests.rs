@@ -1,11 +1,11 @@
 //! Integration tests for the entire `bigml-parallel` executable.
 
+use anyhow::{Context, Result};
 use bigml::{
     resource::{script, source, Execution, Resource, StatusCode},
     Client,
 };
 use cli_test_dir::*;
-use common_failures::prelude::*;
 use futures::FutureExt;
 use std::{env, future::Future, io::Write};
 use tokio::runtime::Runtime;
