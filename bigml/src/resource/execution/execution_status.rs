@@ -97,8 +97,8 @@ pub(crate) mod call_stack_repr {
 
         Ok(raw.map(|vec| {
             vec.into_iter()
-                .map(|res| {
-                    res.map(|(origin, lines, columns)| SourceLocation {
+                .map(|opt| {
+                    opt.map(|(origin, lines, columns)| SourceLocation {
                         origin,
                         columns,
                         lines,
@@ -117,8 +117,8 @@ pub(crate) mod call_stack_repr {
     {
         let raw: Option<Vec<_>> = stack.as_ref().map(|vec| {
             vec.iter()
-                .map(|sloc| {
-                    sloc.as_ref()
+                .map(|opt_sloc| {
+                    opt_sloc.as_ref()
                         .map(|sloc| (sloc.origin, sloc.lines, sloc.columns))
                 })
                 .collect()
