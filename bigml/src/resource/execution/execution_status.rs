@@ -118,7 +118,8 @@ pub(crate) mod call_stack_repr {
         let raw: Option<Vec<_>> = stack.as_ref().map(|vec| {
             vec.iter()
                 .map(|opt_sloc| {
-                    opt_sloc.as_ref()
+                    opt_sloc
+                        .as_ref()
                         .map(|sloc| (sloc.origin, sloc.lines, sloc.columns))
                 })
                 .collect()
