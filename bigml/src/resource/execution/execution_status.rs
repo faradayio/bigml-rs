@@ -27,7 +27,7 @@ pub struct ExecutionStatus {
         skip_serializing_if = "Option::is_none",
         with = "call_stack_repr"
     )]
-    pub call_stack: Option<Vec<SourceLocation>>,
+    pub call_stack: Option<Vec<Option<SourceLocation>>>,
 
     /// The cause of the error.
     pub cause: Option<Cause>,
@@ -87,26 +87,30 @@ pub(crate) mod call_stack_repr {
 
     pub(crate) fn deserialize<'de, D>(
         deserializer: D,
-    ) -> Result<Option<Vec<SourceLocation>>, D::Error>
+    ) -> Result<Option<Vec<Option<SourceLocation>>>, D::Error>
     where
         D: Deserializer<'de>,
     {
         #[allow(clippy::type_complexity)]
-        let raw: Option<Vec<(usize, (u64, u64), (u64, u64))>> =
+        let raw: Option<Vec<Option<(usize, (u64, u64), (u64, u64))>>> =
             Deserialize::deserialize(deserializer)?;
+
         Ok(raw.map(|vec| {
             vec.into_iter()
-                .map(|(origin, lines, columns)| SourceLocation {
-                    origin,
-                    columns,
-                    lines,
+                .map(|res| match res {
+                    Some((origin, lines, columns)) => Some(SourceLocation {
+                        origin,
+                        columns,
+                        lines,
+                    }),
+                    None => None,
                 })
                 .collect()
         }))
     }
 
     pub(crate) fn serialize<S>(
-        stack: &Option<Vec<SourceLocation>>,
+        stack: &Option<Vec<Option<SourceLocation>>>,
         serializer: S,
     ) -> Result<S::Ok, S::Error>
     where
@@ -114,9 +118,13 @@ pub(crate) mod call_stack_repr {
     {
         let raw: Option<Vec<_>> = stack.as_ref().map(|vec| {
             vec.iter()
-                .map(|sloc| (sloc.origin, sloc.lines, sloc.columns))
+                .map(|sloc| match sloc {
+                    Some(sloc) => Some((sloc.origin, sloc.lines, sloc.columns)),
+                    _ => None,
+                })
                 .collect()
         });
+
         raw.serialize(serializer)
     }
 }
@@ -170,7 +178,7 @@ pub struct Instruction {
     pub instruction: String,
 
     /// The source location where the error occurred.
-    pub source: SourceLocation,
+    pub source: Option<SourceLocation>,
 }
 
 #[test]
