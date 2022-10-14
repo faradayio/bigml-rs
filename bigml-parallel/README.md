@@ -44,3 +44,7 @@ OPTIONS:
         --tag <tags>...
             Apply a tag to the BigML resources we create
 ```
+
+## Maintenance status
+
+This project has been moved to the "back burner." Issues that affect Faraday will still be addressed. No guarantees about anything else. Please contact the authors if you want to make heavy use of BigML from Rust.

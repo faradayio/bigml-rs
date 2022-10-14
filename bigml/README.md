@@ -12,6 +12,12 @@ What works:
 - Uploading sources that are small enough to fit in memory.
 - Executing scripts and getting the output values.
 
-It's pretty easy to add new types and fields.  See `src/resources` for existing examples. We will happily accept PRs adding new resource types!
+It's pretty easy to add new types and fields.  See `src/resources` for existing examples.
+
+## Maintenance status
+
+This project has been moved to the "back burner." Issues that affect Faraday or `dbcrossbar` will still be addressed. No guarantees about anything else. Please contact the authors if you want to make heavy use of BigML from Rust.
+
+The `wait` and retry logic may be spun out into a separate crate at some point.
 
 [BigML]: https://bigml.com/

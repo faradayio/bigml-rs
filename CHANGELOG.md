@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2022-10-14
+
+- Update to latest versions of dependencies and latest Rust compiler. Should be backwards compatible with 0.9.2.
+- Set official maintenance status to "as-is". Issues that affect Faraday or `dbcrossbar` will still be addressed. No guarantees about anything else.
+
 ## [0.9.2] - 2022-05-19
 
 ### Fixed
