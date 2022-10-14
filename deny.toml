@@ -10,7 +10,7 @@ ignore = [
     #
     # This can probably be fixed once
     # https://github.com/chronotope/chrono/issues/602 has been addressed.
-    "RUSTSEC-2020-0159",
+    # "RUSTSEC-2020-0159",
     # Also `localtime_r`.
     "RUSTSEC-2020-0071",
 ]
@@ -23,7 +23,7 @@ unlicensed = "deny"
 copyleft = "deny"
 
 # Allow common non-restrictive licenses.
-allow = ["MIT", "Apache-2.0", "BSD-3-Clause", "CC0-1.0", "ISC", "OpenSSL"]
+allow = ["MIT", "Apache-2.0", "BSD-3-Clause", "CC0-1.0", "ISC", "OpenSSL", "Unicode-DFS-2016"]
 
 # Many organizations ban AGPL-licensed code
 # https://opensource.google/docs/using/agpl-policy/
@@ -55,8 +55,8 @@ deny = [
 ]
 
 skip = [
-    # This is being upgraded across the ecosystem right now.
-    { name = "itoa", version = "0.4.8" }
+    # Older version used by chrono -> time 0.1.44.
+    { name = "wasi", version = "0.10.0+wasi-snapshot-preview1" },
 ]
 
 skip-tree = [
