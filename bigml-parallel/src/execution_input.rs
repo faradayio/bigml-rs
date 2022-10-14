@@ -6,7 +6,7 @@ use std::str::FromStr;
 use tracing::warn;
 
 /// An input argument for a BigML execution resource.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ExecutionInput {
     /// The name of this input.
     pub name: String,

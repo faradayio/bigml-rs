@@ -8,10 +8,10 @@ use bigml::{
     wait::{wait, BackoffType, WaitOptions, WaitStatus},
     Client,
 };
+use clap::Parser;
 use futures::{self, stream, FutureExt, StreamExt, TryStreamExt};
 use regex::Regex;
 use std::{process, sync::Arc, time::Duration};
-use structopt::StructOpt;
 use tokio::io;
 use tokio_util::codec::{FramedRead, FramedWrite, LinesCodec};
 use tracing::{debug, error, instrument};
@@ -34,56 +34,54 @@ type BoxStream<T> = futures::stream::BoxStream<'static, Result<T>>;
 type BoxFuture<T> = futures::future::BoxFuture<'static, Result<T>>;
 
 /// Our command-line arguments.
-#[derive(Debug, StructOpt)]
-#[structopt(
+#[derive(Debug, Parser)]
+#[command(
     name = "bigml-parallel",
-    about = "Execute WhizzML script in parallel over one or more BigML resources"
+    about = "Execute WhizzML script in parallel over one or more BigML resources",
+    author,
+    version
 )]
 struct Opt {
     /// The WhizzML script ID to run.
-    #[structopt(long = "script", short = "s")]
+    #[arg(long = "script", short = 's')]
     script: Id<Script>,
 
     /// The name to use for our execution objects.
-    #[structopt(long = "name", short = "n")]
+    #[arg(long = "name", short = 'n')]
     name: Option<String>,
 
     /// The resource IDs to process. (Alternatively, pipe resource IDs on standard
     /// input, one per line.)
-    #[structopt(long = "resource", short = "r")]
+    #[arg(long = "resource", short = 'r')]
     resources: Vec<String>,
 
     /// The input name used to pass the dataset.
-    #[structopt(
-        long = "resource-input-name",
-        short = "R",
-        default_value = "resource"
-    )]
+    #[arg(long = "resource-input-name", short = 'R', default_value = "resource")]
     resource_input_name: String,
 
     /// Extra inputs to our WhizzML script, specified as "name=value". These
     /// will be parsed as JSON if possible, or treated as strings otherwise.
-    #[structopt(long = "input", short = "i")]
+    #[arg(long = "input", short = 'i')]
     inputs: Vec<ExecutionInput>,
 
     /// Expected outputs to our WhizzML script, specified as "name".
-    #[structopt(long = "output", short = "o")]
+    #[arg(long = "output", short = 'o')]
     outputs: Vec<String>,
 
     /// How many BigML tasks should we use at a time?
-    #[structopt(long = "max-tasks", short = "J", default_value = "2")]
+    #[arg(long = "max-tasks", short = 'J', default_value = "2")]
     max_tasks: usize,
 
     /// Apply a tag to the BigML resources we create.
-    #[structopt(long = "tag")]
+    #[arg(long = "tag")]
     tags: Vec<String>,
 
     /// A regular expression specifying which WhizzML script errors should be retried.
-    #[structopt(long = "retry-on")]
+    #[arg(long = "retry-on")]
     retry_on: Option<Regex>,
 
     /// How many times should we retry a failed execution matching --retry-on?
-    #[structopt(long = "retry-count", default_value = "0")]
+    #[arg(long = "retry-count", default_value = "0")]
     retry_count: u16,
 }
 
@@ -114,7 +112,7 @@ async fn main() {
 /// Our real `main` function, called by `main`.
 #[instrument(level = "trace", name = "bigml_parallel")]
 async fn run() -> Result<()> {
-    let opt = Opt::from_args();
+    let opt = Opt::parse();
     debug!("command-line options: {:?}", opt);
 
     // We want to represent our input resource IDs as an asynchronous stream,

@@ -19,6 +19,8 @@ pub(crate) fn derive(ast: &DeriveInput) -> TokenStream {
 
         #[doc = #update_comment]
         #[derive(Clone, Debug, Default, PartialEq, Serialize)]
+        // We don't derive `Eq` because the type may include floats.
+        #[allow(clippy::derive_partial_eq_without_eq)]
         #vis struct #update_name {
             #( #update_fields )*
 

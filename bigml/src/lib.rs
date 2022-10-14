@@ -46,6 +46,11 @@
 //! [example code]: https://github.com/faradayio/bigml-rs/tree/master/examples
 
 #![warn(missing_docs)]
+// We work with a lot of types that include floating point values, which support
+// `PartialEq` but not `Eq`. Therefore, we don't need to be warned that certain
+// types _could_ suppot `Eq` but don't implement it. In any case, some things
+// which support `Eq` now might not in the future.
+#![allow(clippy::derive_partial_eq_without_eq)]
 
 #[macro_use]
 extern crate bigml_derive;
