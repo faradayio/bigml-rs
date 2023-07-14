@@ -3,17 +3,6 @@
 # These policies can be enforced using `cargo deny check`.
 
 [advisories]
-ignore = [
-    # Ignore a nasty `localtime_r` and `setenv` race condition which can
-    # segfault if we try to read the localtime while someone is setting an env
-    # var.
-    #
-    # This can probably be fixed once
-    # https://github.com/chronotope/chrono/issues/602 has been addressed.
-    # "RUSTSEC-2020-0159",
-    # Also `localtime_r`.
-    "RUSTSEC-2020-0071",
-]
 
 [licenses]
 # Don't allow code with an unclear license.
