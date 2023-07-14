@@ -1,6 +1,6 @@
 [package]
 name = "bigml-parallel"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Eric Kidd <git@randomhacks.net>"]
 edition = "2018"
 
@@ -16,7 +16,7 @@ cli_test_dir = "0.1.5"
 
 [dependencies]
 anyhow = { version = "1.0.51", features = ["backtrace"] }
-bigml = { version = "=1.0.0", path = "../bigml" }
+bigml = { version = "=1.0.1", path = "../bigml" }
 bytes = "1.0.1"
 # This makes the executable bigger, but it makes --help much nicer.
 clap = { version = "4", features = ["wrap_help", "derive"] }

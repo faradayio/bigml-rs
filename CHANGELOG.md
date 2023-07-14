@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2023-07-14
+
+### Fixed
+
+- Remove dependency on `time` 1.4, which had a long-standing race condition. This is most useful for anyone still using the `bigml` library, which is probably just `dbcrossbar` at this point.
+
 ## [1.0.0] - 2022-10-14
+
+### Fixed
 
 - Update to latest versions of dependencies and latest Rust compiler. Should be backwards compatible with 0.9.2.
 - Set official maintenance status to "as-is". Issues that affect Faraday or `dbcrossbar` will still be addressed. No guarantees about anything else.
